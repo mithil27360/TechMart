@@ -1,0 +1,47 @@
+# ── Python ──────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual Environments ─────────────────
+venv/
+.venv/
+env/
+ENV/
+.env.local
+.env.*.local
+
+# ── Secrets ─────────────────────────────
+.env
+
+# ── Flask ───────────────────────────────
+instance/
+.webassets-cache
+flask_session/
+
+# ── macOS ───────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── IDEs / Editors ───────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ────────────────────────────────
+*.log
+logs/
+
+# ── Database dumps ───────────────────────
+*.sql.bak
+*.dump

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Browse{% endblock %}
+
+{% block content %}
+<div class="browse-page">
+  <p class="page-eyebrow">Marketplace</p>
+  <h1 class="page-title">Browse Electronics</h1>
+  <p class="page-sub">Find your next device from our curated selection.</p>
+
+
+
+  <!-- Filter Bar -->
+  <form method="GET" action="{{ url_for('browse') }}">
+    <div class="filter-bar">
+      <div class="fg wide">
+        <label>Search</label>
+        <input type="text" name="q" placeholder="Search title or description…" value="{{ request.values.get('q','') }}">
+      </div>
+      <div class="fg">
+        <label>Category</label>
+        <select name="category_id">
+          <option value="">All Categories</option>
+          {% for cat_id, cat_info in categories.items() %}
+            <option value="{{ cat_id }}" {{ 'selected' if request.values.get('category_id')==cat_id|string }}>
+              All {{ cat_info.name }}
+            </option>
+            {% for child in cat_info.children %}
+              <option value="{{ child.category_id }}" {{ 'selected' if request.values.get('category_id')==child.category_id|string }}>
+                &nbsp;&nbsp;&mdash; {{ child.name }}
+              </option>
+            {% endfor %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="fg">
+        <label>Condition</label>
+        <select name="condition">
+          <option value="">Any Condition</option>
+          <option value="new" {{ 'selected' if request.values.get('condition')=='new' }}>New</option>
+          <option value="used" {{ 'selected' if request.values.get('condition')=='used' }}>Used</option>
+          <option value="refurbished" {{ 'selected' if request.values.get('condition')=='refurbished' }}>Refurbished</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Max Price (₹)</label>
+        <input type="number" name="max_price" placeholder="Any" value="{{ request.values.get('max_price','') }}">
+      </div>
+      <button type="submit" class="filter-btn">Filter</button>
+    </div>
+  </form>
+
+  <!-- Items Grid -->
+  <div class="items-grid">
+    {% for item in items %}
+    <div class="item-card">
+      <div class="item-header">
+        <div style="display:flex; gap:8px;">
+          <span class="cat-chip">{{ item.category_name }}</span>
+          <span class="cat-chip" style="background:var(--blue-50); color:var(--blue); border-color:var(--blue-200);">{{ item.item_condition | upper }}</span>
+        </div>
+        <span class="item-seller">👤 {{ item.seller_name }}</span>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <h3 class="item-title">{{ item.title }}</h3>
+        <span class="stock-badge {{ 'low-stock' if item.quantity < 3 else 'in-stock' }}">
+          {{ item.quantity }} in stock
+        </span>
+      </div>
+
+      <p class="item-price">₹{{ "{:,.0f}".format(item.price) }}</p>
+      <p class="item-desc">{{ item.description }}</p>
+      
+      <div class="item-actions">
+        <!-- Wishlist -->
+        <form action="{{ url_for('wishlist') }}" method="POST" style="margin:0;">
+          <input type="hidden" name="item_id" value="{{ item.item_id }}">
+          <button type="submit" class="wish-btn" title="Add to Wishlist">❤️</button>
+        </form>
+
+        <!-- Buy Form -->
+        <form action="{{ url_for('buy_item', item_id=item.item_id) }}" method="POST" class="buy-form">
+          <input type="number" name="quantity" value="1" min="1" max="{{ item.quantity }}" class="qty-input">
+          <button type="submit" class="buy-btn">Buy Now</button>
+        </form>
+      </div>
+      <p class="item-time">Listed on {{ item.created_at.strftime('%b %d, %Y') }}</p>
+    </div>
+    {% else %}
+    <p class="empty-state">No items match your filters. Try broadening your search.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

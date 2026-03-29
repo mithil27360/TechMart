@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Buyer</p>
+  <h1 class="page-title">Notifications</h1>
+  <p class="page-sub">Alerts for items matching your saved interests. Click a card to mark it as read.</p>
+
+  {% if notifications %}
+  <div class="notif-list">
+    {% for n in notifications %}
+    <div class="notif-card {{ 'read' if n.is_read else 'unread' }}" id="notif-{{ n.notification_id }}" onclick="markAsRead({{ n.notification_id }})">
+      <div class="notif-top">
+        <span class="notif-cat">Alert Match</span>
+        <span class="notif-badge {{ 'read' if n.is_read else 'new' }}">
+          {{ 'READ' if n.is_read else 'NEW' }}
+        </span>
+      </div>
+      <p class="notif-title">{{ n.title }}</p>
+      <p class="notif-detail">{{ n.message }}</p>
+      <p class="notif-time">{{ n.sent_at.strftime('%b %d, %Y · %H:%M') }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:80px 20px;color:#6e6e73;">
+    <p style="font-size:2.5rem;margin-bottom:16px;">📭</p>
+    <p style="font-size:1rem;">No notifications yet. Register your interests to start receiving alerts.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

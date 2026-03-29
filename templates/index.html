@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Electronic Marketplace{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero-block">
+  <p class="hero-eyebrow">MarketNest Store</p>
+  <h1 class="hero-headline">Buy. Sell.<br>Get Notified.</h1>
+  <p class="hero-sub">The minimalist marketplace for electronics. Discover the finest devices, or list yours for matching buyers — instantly.</p>
+  <div class="hero-links">
+    <a href="{{ url_for('register') }}" class="link-primary">Get Started <i class="chevron">›</i></a>
+    <a href="{{ url_for('login') }}" class="link-secondary">Sign In <i class="chevron">›</i></a>
+  </div>
+</section>
+
+<!-- Product 1 — iPhone -->
+<section class="product-block dark">
+  <p class="product-eyebrow">New</p>
+  <h2 class="product-headline">iPhone 17 Pro.</h2>
+  <p class="product-sub">Forged from titanium. Engineered for everything.</p>
+  <div class="product-img-wrap">
+    <img src="{{ url_for('static', filename='images/apple-iphone-17-pro-back-1.webp') }}"
+         alt="iPhone 17 Pro — Titanium Black" loading="lazy">
+  </div>
+  <div class="product-links">
+    <a href="{{ url_for('register') }}" class="link-primary">Learn more <i class="chevron">›</i></a>
+    <a href="{{ url_for('login') }}" class="link-secondary" style="color:rgba(255,255,255,0.5)">Buy <i class="chevron">›</i></a>
+  </div>
+</section>
+
+<!-- Product 2 — Shopping -->
+<section class="product-block grey">
+  <p class="product-eyebrow">Discover</p>
+  <h2 class="product-headline">Shop. Smarter.</h2>
+  <p class="product-sub">Browse thousands of curated electronics from trusted sellers. Filter by category and price in seconds.</p>
+  <div class="product-img-wrap" style="max-width:860px;">
+    <img src="{{ url_for('static', filename='images/shopping.webp') }}"
+         alt="MarketNest Shopping Experience" loading="lazy">
+  </div>
+  <div class="product-links">
+    <a href="{{ url_for('register') }}" class="link-primary">Start browsing <i class="chevron">›</i></a>
+  </div>
+</section>
+
+<!-- Product 3 — Shopping full -->
+<section class="product-block">
+  <p class="product-eyebrow">For Sellers</p>
+  <h2 class="product-headline">List. Notify.<br>Sell.</h2>
+  <p class="product-sub">Post your item in seconds. Our trigger-powered system auto-alerts every buyer whose interests match — no effort needed.</p>
+  <div class="product-img-wrap" style="max-width:900px;">
+    <img src="{{ url_for('static', filename='images/shopping (1).webp') }}"
+         alt="Seller Dashboard" loading="lazy">
+  </div>
+  <div class="product-links">
+    <a href="{{ url_for('register') }}" class="link-primary">Become a seller <i class="chevron">›</i></a>
+  </div>
+</section>
+
+<!-- Feature Grid -->
+<section class="feature-section">
+  <p class="section-label">What's inside</p>
+  <div class="feature-grid">
+    <div class="feat-card">
+      <span class="feat-icon">👤</span>
+      <h3 class="feat-title">User Auth</h3>
+      <p class="feat-desc">Role-based accounts for buyers and sellers with secure session management.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📝</span>
+      <h3 class="feat-title">Item Listing</h3>
+      <p class="feat-desc">Sellers post with title, description, price and hierarchical category selection.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🗂️</span>
+      <h3 class="feat-title">Category Hierarchy</h3>
+      <p class="feat-desc">Structured parent-child categories like Electronics › Phones for precise browsing.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔍</span>
+      <h3 class="feat-title">Search & Filter</h3>
+      <p class="feat-desc">Full-text search with category and price range filters — instant results.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">💖</span>
+      <h3 class="feat-title">Private Interests</h3>
+      <p class="feat-desc">Buyers register private interests. Sellers never see them. Your data stays yours.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔔</span>
+      <h3 class="feat-title">Auto Notifications</h3>
+      <p class="feat-desc">A database trigger fires instantly when a matching item is listed. Zero delay.</p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

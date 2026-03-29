@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}My Interests{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Buyer</p>
+  <h1 class="page-title">My Interests</h1>
+  <p class="page-sub">Register a category and price range. We'll alert you the instant a matching item is listed.</p>
+
+  <div class="card-box">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category_id">Category (Optional)</label>
+          <select id="category_id" name="category_id">
+            <option value="">Any Category</option>
+            {% for cat_id, cat_info in categories.items() %}
+              <optgroup label="{{ cat_info.name }}">
+                {% for child in cat_info.children %}
+                  <option value="{{ child.category_id }}">{{ child.name }}</option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="keyword">Keyword (Optional)</label>
+          <input type="text" id="keyword" name="keyword" placeholder="e.g. Pro, M1, 256GB">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="min_price">Min Price (₹)</label>
+          <input type="number" id="min_price" name="min_price" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label for="max_price">Max Price (₹)</label>
+          <input type="number" id="max_price" name="max_price" min="1" placeholder="Any">
+        </div>
+        <div class="form-group">
+          <label for="condition">Preferred Condition</label>
+          <select id="condition" name="condition">
+            <option value="">Any Condition</option>
+            <option value="new">New</option>
+            <option value="used">Used</option>
+            <option value="refurbished">Refurbished</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn">Save Smart Interest</button>
+    </form>
+  </div>
+
+  <p class="info-note">Your interests are private — sellers can never see them. We'll smart-match your keyword and filters against new listings.</p>
+
+  <h2 style="font-size:1.2rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px;">Active Smart Alerts</h2>
+  <div class="table-wrap">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Keyword</th>
+          <th>Condition</th>
+          <th>Range</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in interests %}
+        <tr>
+          <td>{{ i.category_name if i.category_name else 'Global' }}</td>
+          <td><code style="background:var(--grey-100);padding:2px 6px;border-radius:4px;">{{ i.keyword if i.keyword else 'Any' }}</code></td>
+          <td><span class="cat-chip">{{ i.item_condition | upper if i.item_condition else 'ANY' }}</span></td>
+          <td class="td-price">₹{{ "{:,.0f}".format(i.min_price or 0) }} - {{ "₹{:,.0f}".format(i.max_price) if i.max_price else '∞' }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('delete_interest', interest_id=i.interest_id) }}">
+              <button type="submit" class="btn-del">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#6e6e73;padding:28px;">No interests yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

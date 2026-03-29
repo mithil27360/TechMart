@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Manage Categories{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Administration</p>
+  <h1 class="page-title">Category Hierarchy</h1>
+  <p class="page-sub">Define and organize the parent-child structure for the marketplace.</p>
+
+  <div class="two-col-grid" style="grid-template-columns: 1fr 2fr; gap: 40px; margin-top: 32px;">
+    <!-- Add Category Form -->
+    <div class="admin-form-card" style="padding: 24px; background: var(--grey-100); border-radius: 14px;">
+      <h3 class="section-title">New Category</h3>
+      <form action="{{ url_for('admin_categories') }}" method="POST">
+        <div class="fg">
+          <label>Category Name</label>
+          <input type="text" name="name" placeholder="e.g., Audio, Kitchen" required>
+        </div>
+        <div class="fg">
+          <label>Parent Category (Optional)</label>
+          <select name="parent_id">
+            <option value="">None (Top Level)</option>
+            {% for cat in all_cats %}
+              {% if not cat.parent_id %}
+              <option value="{{ cat.category_id }}">{{ cat.name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="primary-btn" style="width:100%; margin-top: 10px;">Add Category</button>
+      </form>
+    </div>
+
+    <!-- Tree View -->
+    <div class="category-tree-view">
+      <h3 class="section-title">Existing Hierarchy</h3>
+      <div class="table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th>Categories</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cat_id, cat_info in categories.items() %}
+            <tr style="background: var(--grey-100);">
+              <td class="td-bold">📁 {{ cat_info.name }}</td>
+              <td>
+                <form action="{{ url_for('admin_delete_category', cat_id=cat_id) }}" method="POST">
+                  <button type="submit" class="btn-del" onclick="return confirm('Deleting a parent category will clear parent links for its children. Procced?')">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% for child in cat_info.children %}
+            <tr>
+              <td style="padding-left: 40px;">↳ {{ child.name }}</td>
+              <td>
+                <form action="{{ url_for('admin_delete_category', cat_id=child.category_id) }}" method="POST">
+                  <button type="submit" class="btn-del">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

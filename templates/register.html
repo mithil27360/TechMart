@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-sub">Join the MarketNest community.</p>
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" required placeholder="Your full name">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required placeholder="name@email.com">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" name="password" required placeholder="Choose a password">
+          <button type="button" class="pw-toggle" id="togglePassword"></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>I am a</label>
+        <div class="role-row">
+          <label class="role-opt">
+            <input type="radio" name="role" value="buyer" checked>
+            <span class="role-label">🛒 Buyer</span>
+          </label>
+          <label class="role-opt">
+            <input type="radio" name="role" value="seller">
+            <span class="role-label">🏪 Seller</span>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit">Create Account</button>
+    </form>
+
+    <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign In</a></p>
+  </div>
+</div>
+{% endblock %}

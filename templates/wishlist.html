@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}My Wishlist{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Personal</p>
+  <h1 class="page-title">My Wishlist</h1>
+  <p class="page-sub">Items you've saved to watch for price drops or inventory changes.</p>
+
+  <div class="items-grid">
+    {% for item in items %}
+    <div class="item-card">
+      <div class="item-header">
+        <span class="cat-chip">{{ item.category_name }}</span>
+        <span class="cat-chip" style="background:var(--grey-100);">{{ item.item_condition | upper }}</span>
+      </div>
+      <h3 class="item-title">{{ item.title }}</h3>
+      <p class="item-price">₹{{ "{:,.0f}".format(item.price) }}</p>
+      
+      <div class="item-actions" style="margin-top: 24px;">
+        <form action="{{ url_for('buy_item', item_id=item.item_id) }}" method="POST" style="flex:1;">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" class="buy-btn" style="width:100%;">Buy Now</button>
+        </form>
+        <form action="{{ url_for('remove_wish', wish_id=item.wishlist_id) }}" method="POST">
+          <button type="submit" class="btn-del" style="padding:10px 14px;border-radius:10px;">Remove</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state" style="grid-column: 1/-1; padding: 80px 0;">
+      <p style="font-size: 1.1rem; color: var(--grey-400);">Your wishlist is currently empty.</p>
+      <a href="{{ url_for('browse') }}" class="text-link" style="margin-top: 12px; display: inline-block;">Start browsing →</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Post Item{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Seller</p>
+  <h1 class="page-title">Post a New Item</h1>
+  <p class="page-sub">Describe your product and reach matching buyers instantly via automated alerts.</p>
+
+  <div class="card-box">
+    <form method="POST" action="{{ url_for('post_item') }}">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="title">Product Title</label>
+          <input type="text" id="title" name="title" required placeholder="e.g. iPhone 13 Pro">
+        </div>
+        <div class="form-group">
+          <label for="price">Price (₹)</label>
+          <input type="number" id="price" name="price" required min="1" step="0.01" placeholder="Enter amount">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="condition">Item Condition</label>
+          <select id="condition" name="condition" required>
+            <option value="new">🆕 New</option>
+            <option value="used" selected>🤝 Used</option>
+            <option value="refurbished">🔧 Refurbished</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="quantity">Quantity in Stock</label>
+          <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="category_id">Category</label>
+        <select id="category_id" name="category_id" required>
+          <option value="">Select category</option>
+          {% for cat_id, cat_info in categories.items() %}
+            <optgroup label="{{ cat_info.name }}">
+              {% for child in cat_info.children %}
+                <option value="{{ child.category_id }}">{{ child.name }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" required placeholder="Condition, age, key specs…"></textarea>
+      </div>
+      <button type="submit" class="submit-btn">List Item</button>
+    </form>
+  </div>
+
+  <p class="info-note">Buyers with matching interests will be auto-notified the moment your item is posted — no extra steps needed.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Administration</p>
+  <h1 class="page-title">User Management</h1>
+  <p class="page-sub">Review and moderate all registered buyers and sellers.</p>
+
+  <div class="table-wrap">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td class="td-bold">{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td><span class="cat-chip" style="color:var(--black);background:var(--grey-100);">{{ user.role | upper }}</span></td>
+          <td>{{ user.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            {% if user.role != 'admin' %}
+            <form action="{{ url_for('admin_delete_user', user_id=user.user_id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn-del" onclick="return confirm('Are you sure? This will delete all items and data for this user.')">Delete</button>
+            </form>
+            {% else %}
+            <span style="font-size:0.7rem;color:var(--grey-400);">System</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

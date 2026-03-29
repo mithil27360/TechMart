@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketNest — {% block title %}{% endblock %}</title>
+  <meta name="description" content="MarketNest — the minimalist electronic marketplace for buyers and sellers.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Global Navigation -->
+<nav class="global-nav">
+  <div class="nav-inner">
+    <a href="{{ url_for('index') }}" class="nav-logo">MarketNest</a>
+
+    {% if session.get('user_id') %}
+    <ul class="nav-links">
+      {% if session.role == 'buyer' %}
+        <li><a href="{{ url_for('browse') }}">Browse</a></li>
+        <li><a href="{{ url_for('interests') }}">Interests</a></li>
+        <li><a href="{{ url_for('notifications') }}">Notifications</a></li>
+        <li class="nav-search-li">
+          <form class="nav-search-form" action="{{ url_for('browse') }}" method="GET" autocomplete="off">
+            <input type="text" name="q" id="navSearchInput" placeholder="Search..." class="nav-search-input" value="{{ request.args.get('q','') }}">
+            <button type="submit" class="nav-search-btn">🔍</button>
+            <div id="searchSuggestions" class="search-suggestions-box"></div>
+          </form>
+        </li>
+      {% else %}
+        <li><a href="{{ url_for('post_item') }}">Post Item</a></li>
+        <li><a href="{{ url_for('listings') }}">My Listings</a></li>
+      {% endif %}
+    </ul>
+    <div class="nav-actions">
+      <span style="font-size:0.8rem;color:#6e6e73;">Hi, {{ session.name }}</span>
+      <a href="{{ url_for('logout') }}" style="color:#ff3b30;font-size:0.78rem;">Sign Out</a>
+    </div>
+    {% else %}
+    <ul class="nav-links">
+      <li><a href="{{ url_for('index') }}">Store</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="{{ url_for('login') }}">Sign In</a>
+      <a href="{{ url_for('register') }}" class="nav-cta">Get Started</a>
+    </div>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap" id="flashWrap">
+    {% for cat, msg in messages %}
+      <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+{% if session.get('user_id') %}
+<!-- Authenticated Layout: Sidebar + Main -->
+<div class="app-frame">
+  <aside class="sidebar">
+    <p class="sidebar-section-label">Menu</p>
+    {% if session.role == 'buyer' %}
+      <a href="{{ url_for('browse') }}" class="nav-item {{ 'active' if request.path=='/browse' }}">
+        <span class="icon">📦</span> Browse
+      </a>
+      <a href="{{ url_for('interests') }}" class="nav-item {{ 'active' if request.path=='/interests' }}">
+        <span class="icon">❤️</span> My Interests
+      </a>
+      <a href="{{ url_for('wishlist') }}" class="nav-item {{ 'active' if request.path=='/wishlist' }}">
+        <span class="icon">🔖</span> Wishlist
+      </a>
+      <a href="{{ url_for('notifications') }}" class="nav-item {{ 'active' if request.path=='/notifications' }}">
+        <span class="icon">🔔</span> Notifications
+        {% if notif_count is defined and notif_count > 0 %}
+        <span class="badge">{{ notif_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('orders') }}" class="nav-item {{ 'active' if request.path=='/orders' }}">
+        <span class="icon">🛍️</span> My Orders
+      </a>
+    {% elif session.role == 'seller' %}
+      <a href="{{ url_for('post_item') }}" class="nav-item {{ 'active' if request.path=='/post' }}">
+        <span class="icon">➕</span> Post Item
+      </a>
+      <a href="{{ url_for('listings') }}" class="nav-item {{ 'active' if request.path=='/listings' }}">
+        <span class="icon">📋</span> My Listings
+      </a>
+      <a href="{{ url_for('orders') }}" class="nav-item {{ 'active' if request.path=='/orders' }}">
+        <span class="icon">📈</span> Sales History
+      </a>
+    {% elif session.role == 'admin' %}
+      <a href="{{ url_for('admin_dashboard') }}" class="nav-item {{ 'active' if request.path=='/admin' }}">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="{{ url_for('admin_users') }}" class="nav-item {{ 'active' if request.path=='/admin/users' }}">
+        <span class="icon">👥</span> Users
+      </a>
+      <a href="{{ url_for('admin_items') }}" class="nav-item {{ 'active' if request.path=='/admin/items' }}">
+        <span class="icon">📦</span> All Items
+      </a>
+      <a href="{{ url_for('admin_categories') }}" class="nav-item {{ 'active' if request.path=='/admin/categories' }}">
+        <span class="icon">📂</span> Categories
+      </a>
+    {% endif %}
+
+    <div class="sidebar-bottom">
+      <div class="user-chip">
+        <span class="u-name">{{ session.name }}</span>
+        <span class="u-role">{{ session.role }}</span>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-link">Sign Out</a>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% else %}
+<!-- Public Layout -->
+<div class="page">
+  {{ self.content() }}
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

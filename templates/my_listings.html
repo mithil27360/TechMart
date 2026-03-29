@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My Listings{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Seller</p>
+  <h1 class="page-title">My Listings</h1>
+  <p class="page-sub">All items you have listed on MarketNest.</p>
+
+  <div class="table-wrap">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Posted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="td-bold">{{ item.title }}</td>
+          <td>{{ item.category_name }}</td>
+          <td class="td-price">₹{{ "{:,.0f}".format(item.price) }}</td>
+          <td style="color:#6e6e73;">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#6e6e73;padding:36px;">You haven't listed anything yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

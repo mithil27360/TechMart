@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Manage Listings{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Administration</p>
+  <h1 class="page-title">Marketplace Moderation</h1>
+  <p class="page-sub">Review and remove inappropriate listings to maintain quality.</p>
+
+  <div class="table-wrap">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Item Title</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Seller</th>
+          <th>Listed</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="td-bold">{{ item.title }}</td>
+          <td><span class="cat-chip">{{ item.category_name }}</span></td>
+          <td class="td-price">₹{{ "{:,.0f}".format(item.price) }}</td>
+          <td>{{ item.seller_name }}</td>
+          <td>{{ item.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            <form action="{{ url_for('admin_delete_item', item_id=item.item_id) }}" method="POST">
+              <button type="submit" class="btn-del" onclick="return confirm('Remove listing?')">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
