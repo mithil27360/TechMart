@@ -399,6 +399,40 @@ body {
 .auth-title { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px; }
 .auth-sub { font-size: 0.875rem; color: var(--grey-400); margin-bottom: 32px; }
 
+/* ── Social Auth & OTP ── */
+.auth-divider {
+  display: flex; align-items: center; text-align: center;
+  margin: 32px 0; color: var(--grey-300); font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; border-bottom: 1px solid var(--grey-100);
+}
+.auth-divider span { padding: 0 16px; }
+
+.google-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 14px; border-radius: 12px;
+  background: var(--white); border: 1px solid var(--grey-200);
+  color: var(--grey-900); font-weight: 500; text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); gap: 12px; font-size: 0.95rem;
+}
+.google-btn img { width: 22px; height: 22px; }
+.google-btn:hover { background: #fdfdfd; border-color: var(--grey-300); box-shadow: 0 1px 3px rgba(0,0,0,0.08); transform: translateY(-1px); }
+
+.otp-page { display: flex; align-items: center; justify-content: center; height: calc(100vh - 100px); }
+.otp-subtitle { color: var(--grey-400); margin: 8px 0 32px; line-height: 1.5; font-size: 0.875rem; }
+.otp-inputs { display: flex; gap: 12px; justify-content: center; margin-bottom: 32px; }
+.otp-field {
+  width: 100%; max-width: 300px; font-size: 2.4rem; letter-spacing: 0.6rem;
+  text-align: center; border: none; border-bottom: 2px solid var(--grey-200);
+  padding: 10px; outline: none; transition: all 0.2s ease;
+  font-family: 'SF Mono', 'Courier New', monospace; font-weight: 700; color: var(--grey-900);
+}
+.otp-field:focus { border-color: var(--blue); color: var(--blue); }
+.resend-link { display: block; margin-top: 24px; color: var(--blue); text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: color 0.2s; }
+.resend-link:hover { color: #005bb5; text-decoration: underline; }
+
 .form-group { margin-bottom: 18px; }
 .form-group label {
   display: block;

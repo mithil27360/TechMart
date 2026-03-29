@@ -1,6 +1,10 @@
 import os
+import random
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
+from authlib.integrations.flask_client import OAuth
+from flask_mail import Mail, Message
 import db
 import mysql.connector
 from dotenv import load_dotenv
@@ -9,6 +13,26 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "marketnest_secret_key")
+
+# --- OAuth & Mail Config ---
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+app.config.update(
+    MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.gmail.com"),
+    MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
+    MAIL_USE_TLS=os.getenv("MAIL_USE_TLS", "True") == "True",
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+    MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER")
+)
+mail = Mail(app)
 
 # --- Helper functions ---
 
@@ -20,6 +44,35 @@ def admin_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
+
+def verified_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' in session and not session.get('is_verified', False):
+            flash("Please verify your email to continue.", "info")
+            return redirect(url_for('verify_otp'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def send_otp_email(email, user_id):
+    otp = str(random.randint(100000, 999999))
+    expiry = datetime.now() + timedelta(minutes=10)
+    
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET otp_token = %s, otp_expiry = %s WHERE user_id = %s", (otp, expiry, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    msg = Message("Your MarketNest Verification Code", recipients=[email])
+    msg.body = f"Your verification code is: {otp}. It expires in 10 minutes."
+    try:
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Mail error: {e}")
+        return False
 
 def get_categories():
     conn = db.get_connection()
@@ -40,7 +93,58 @@ def get_categories():
                 hierarchy[cat['parent_id']]['children'].append(cat)
     return hierarchy
 
+@app.context_processor
+def inject_notif_count():
+    notif_count = 0
+    if 'user_id' in session:
+        conn = db.get_connection()
+        if conn:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
+            notif_count = cursor.fetchone()['count']
+            cursor.close()
+            conn.close()
+    return dict(notif_count=notif_count)
+
+# --- API Routes ---
+
+@app.route('/api/search/suggestions')
+def search_suggestions():
+    q = request.args.get('q', '').strip()
+    cat_id = request.args.get('cat_id', '').strip()
+    
+    if len(q) < 2:
+        return jsonify([])
+        
+    conn = db.get_connection()
+    if not conn: return jsonify([])
+    cursor = conn.cursor(dictionary=True)
+    
+    query = """
+        SELECT item_id, title, price, quantity 
+        FROM items 
+        WHERE (title LIKE %s OR description LIKE %s) AND quantity > 0
+    """
+    params = [f"%{q}%", f"%{q}%"]
+    
+    if cat_id:
+        query += " AND category_id = %s"
+        params.append(cat_id)
+        
+    query += " LIMIT 5"
+    
+    cursor.execute(query, tuple(params))
+    suggestions = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return jsonify(suggestions)
+
 # --- Routes ---
+
+@app.route('/healthz')
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
 @app.route('/')
 def index():
@@ -84,6 +188,7 @@ def register():
             
     return render_template('register.html')
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -107,9 +212,16 @@ def login():
         conn.close()
         
         if user:
+            if not user['is_verified']:
+                session['user_id'] = user['user_id']
+                session['email'] = user['email']
+                send_otp_email(user['email'], user['user_id'])
+                return redirect(url_for('verify_otp'))
+                
             session['user_id'] = user['user_id']
             session['name'] = user['name']
             session['role'] = user['role']
+            session['is_verified'] = True
             flash(f"Welcome back, {user['name']}!", "success")
             if user['role'] == 'buyer':
                 return redirect(url_for('browse'))
@@ -119,6 +231,82 @@ def login():
             flash("Invalid email or password.", "error")
             
     return render_template('login.html')
+
+# --- Social Auth Routes ---
+
+@app.route('/login/google')
+def login_google():
+    redirect_uri = url_for('auth_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/callback')
+def auth_callback():
+    token = google.authorize_access_token()
+    user_info = token.get('userinfo')
+    if not user_info:
+        flash("Google authentication failed.", "error")
+        return redirect(url_for('login'))
+    
+    email = user_info['email']
+    google_id = user_info['sub']
+    name = user_info.get('name', email.split('@')[0])
+    
+    conn = db.get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE google_id = %s OR email = %s", (google_id, email))
+    user = cursor.fetchone()
+    
+    if user:
+        # Link Google ID if not present
+        if not user['google_id']:
+            cursor.execute("UPDATE users SET google_id = %s WHERE user_id = %s", (google_id, user['user_id']))
+            conn.commit()
+    else:
+        # Create new user (default to buyer)
+        cursor.execute("INSERT INTO users (name, email, google_id, role, password, is_verified) VALUES (%s, %s, %s, 'buyer', 'oauth_user', True)", 
+                       (name, email, google_id))
+        conn.commit()
+        cursor.execute("SELECT * FROM users WHERE google_id = %s", (google_id,))
+        user = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+    
+    session['user_id'] = user['user_id']
+    session['name'] = user['name']
+    session['role'] = user['role']
+    session['is_verified'] = True # Google matches are verified by default
+    
+    flash(f"Logged in with Google as {user['name']}!", "success")
+    return redirect(url_for('browse') if user['role'] == 'buyer' else url_for('post_item'))
+
+@app.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    if session.get('is_verified'): return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        otp = request.form.get('otp')
+        conn = db.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE user_id = %s", (session['user_id'],))
+        user = cursor.fetchone()
+        
+        if user and user['otp_token'] == otp and user['otp_expiry'] > datetime.now():
+            cursor.execute("UPDATE users SET is_verified = True, otp_token = NULL WHERE user_id = %s", (session['user_id'],))
+            conn.commit()
+            session['is_verified'] = True
+            session['name'] = user['name']
+            session['role'] = user['role']
+            flash("Email verified successfully!", "success")
+            return redirect(url_for('browse') if user['role'] == 'buyer' else url_for('post_item'))
+        else:
+            flash("Invalid or expired OTP.", "error")
+            
+        cursor.close()
+        conn.close()
+        
+    return render_template('verify_otp.html')
 
 @app.route('/logout')
 def logout():
@@ -185,14 +373,10 @@ def browse():
     cursor.execute(query, tuple(params))
     items = cursor.fetchall()
     
-    # Get notification count (Professional check: is_read)
-    cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
-    notif_count = cursor.fetchone()['count']
-    
     cursor.close()
     conn.close()
     
-    return render_template('browse.html', items=items, categories=get_categories(), notif_count=notif_count)
+    return render_template('browse.html', items=items, categories=get_categories())
 
 @app.route('/post', methods=['GET', 'POST'])
 def post_item():
@@ -256,14 +440,10 @@ def interests():
     """, (session['user_id'],))
     user_interests = cursor.fetchall()
     
-    # Get notification count
-    cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
-    notif_count = cursor.fetchone()['count']
-    
     cursor.close()
     conn.close()
     
-    return render_template('interests.html', interests=user_interests, categories=get_categories(), notif_count=notif_count)
+    return render_template('interests.html', interests=user_interests, categories=get_categories())
 
 @app.route('/interests/delete/<int:interest_id>', methods=['POST'])
 def delete_interest(interest_id):
@@ -281,7 +461,7 @@ def delete_interest(interest_id):
 
 @app.route('/notifications')
 def notifications():
-    if 'user_id' not in session or session['role'] != 'buyer':
+    if 'user_id' not in session:
         return redirect(url_for('login'))
         
     conn = db.get_connection()
@@ -305,13 +485,9 @@ def notifications():
         """, (session['user_id'],))
         user_notifications = cursor.fetchall()
         
-    # Standardize on is_read for count
-    cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
-    notif_count = cursor.fetchone()['count']
-    
     cursor.close()
     conn.close()
-    return render_template('notifications.html', notifications=user_notifications, notif_count=notif_count)
+    return render_template('notifications.html', notifications=user_notifications)
 
 @app.route('/listings')
 def listings():
@@ -539,13 +715,9 @@ def orders():
         
     user_orders = cursor.fetchall()
     
-    # Notifications badge
-    cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
-    notif_count = cursor.fetchone()['count']
-    
     cursor.close()
     conn.close()
-    return render_template('orders.html', orders=user_orders, notif_count=notif_count)
+    return render_template('orders.html', orders=user_orders)
 
 @app.route('/wishlist', methods=['GET', 'POST'])
 def wishlist():
@@ -572,13 +744,9 @@ def wishlist():
     """, (session['user_id'],))
     items = cursor.fetchall()
     
-    # Notifications badge
-    cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
-    notif_count = cursor.fetchone()['count']
-    
     cursor.close()
     conn.close()
-    return render_template('wishlist.html', items=items, notif_count=notif_count)
+    return render_template('wishlist.html', items=items)
 
 @app.route('/wishlist/remove/<int:wish_id>', methods=['POST'])
 def remove_wish(wish_id):
@@ -592,31 +760,8 @@ def remove_wish(wish_id):
     flash("Item removed from wishlist.", "success")
     return redirect(url_for('wishlist'))
 
-@app.route('/api/search/suggestions')
-def search_suggestions():
-    q = request.args.get('q', '').strip()
-    cat_id = request.args.get('cat_id', '').strip()
-    
-    if len(q) < 2:
-        return jsonify([])
-        
-    query = "SELECT title, price, item_id FROM items WHERE title LIKE %s AND quantity > 0"
-    params = [f"%{q}%"]
-    
-    if cat_id:
-        query += " AND category_id = %s"
-        params.append(cat_id)
-        
-    query += " LIMIT 5"
-    
-    conn = db.get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(query, tuple(params))
-    suggestions = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return jsonify(suggestions)
+# --- Server Start ---
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=True, host='0.0.0.0', port=port)

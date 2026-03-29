@@ -12,7 +12,7 @@
     {% for n in notifications %}
     <div class="notif-card {{ 'read' if n.is_read else 'unread' }}" id="notif-{{ n.notification_id }}" onclick="markAsRead({{ n.notification_id }})">
       <div class="notif-top">
-        <span class="notif-cat">Alert Match</span>
+        <span class="notif-cat">Marketplace Alert</span>
         <span class="notif-badge {{ 'read' if n.is_read else 'new' }}">
           {{ 'READ' if n.is_read else 'NEW' }}
         </span>

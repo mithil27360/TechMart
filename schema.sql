@@ -4,6 +4,10 @@ create table users (
     email varchar(100) unique not null,
     password varchar(100) not null,
     role varchar(10) not null,
+    google_id varchar(255) unique,
+    is_verified boolean default false,
+    otp_token varchar(6),
+    otp_expiry timestamp null,
     created_at timestamp default current_timestamp,
     constraint chk_role check (role in ('buyer', 'seller', 'admin'))
 );
@@ -161,5 +165,15 @@ begin
     and (i.max_price is null or new.price <= i.max_price)
     and (i.item_condition is null or i.item_condition = new.item_condition)
     and (i.keyword is null or new.title like concat('%', i.keyword, '%') or new.description like concat('%', i.keyword, '%'));
+end $$
+
+-- New Trigger: Seller Order alerts
+create trigger notify_seller_after_order
+after insert on orders
+for each row
+begin
+    insert into notifications(user_id, item_id, message)
+    values (new.seller_id, new.item_id, 
+           concat('You have a new order for ', (select title from items where item_id=new.item_id), ' from ', (select name from users where user_id=new.buyer_id)));
 end $$
 delimiter ;
