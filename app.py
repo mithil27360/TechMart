@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from functools import wraps
 from authlib.integrations.flask_client import OAuth
 from flask_mail import Mail, Message
+from werkzeug.middleware.proxy_fix import ProxyFix
 import db
 import mysql.connector
 from dotenv import load_dotenv
@@ -12,6 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+# Render/Heroku use proxies, this ensures https is detected correctly
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "marketnest_secret_key")
 
 # --- OAuth & Mail Config ---
