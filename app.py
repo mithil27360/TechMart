@@ -15,7 +15,7 @@ load_dotenv()
 app = Flask(__name__)
 # Render/Heroku use proxies, this ensures https is detected correctly
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "marketnest_secret_key")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "techmart_secret_key")
 
 # --- OAuth & Mail Config ---
 oauth = OAuth(app)
@@ -68,7 +68,7 @@ def send_otp_email(email, user_id):
     cursor.close()
     conn.close()
     
-    msg = Message("Your MarketNest Verification Code", recipients=[email])
+    msg = Message("Your TechMart Verification Code", recipients=[email])
     msg.body = f"Your verification code is: {otp}. It expires in 10 minutes."
     try:
         mail.send(msg)

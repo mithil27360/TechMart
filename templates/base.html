@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MarketNest — {% block title %}{% endblock %}</title>
-  <meta name="description" content="MarketNest — the minimalist electronic marketplace for buyers and sellers.">
+  <title>TechMart — {% block title %}{% endblock %}</title>
+  <meta name="description" content="TechMart — the premium electronic marketplace for buyers and sellers. Built for speed, trust, and simplicity.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -15,7 +15,9 @@
 <!-- Global Navigation -->
 <nav class="global-nav">
   <div class="nav-inner">
-    <a href="{{ url_for('index') }}" class="nav-logo">MarketNest</a>
+    <a href="{{ url_for('index') }}" class="nav-logo">
+      <span class="logo-text">Tech</span><span class="logo-highlight">Mart</span>
+    </a>
 
     {% if session.get('user_id') %}
     <ul class="nav-links">
@@ -25,7 +27,7 @@
         <li><a href="{{ url_for('notifications') }}">Notifications</a></li>
         <li class="nav-search-li">
           <form class="nav-search-form" action="{{ url_for('browse') }}" method="GET" autocomplete="off">
-            <input type="text" name="q" id="navSearchInput" placeholder="Search..." class="nav-search-input" value="{{ request.args.get('q','') }}">
+            <input type="text" name="q" id="navSearchInput" placeholder="Search tech..." class="nav-search-input" value="{{ request.args.get('q','') }}">
             <button type="submit" class="nav-search-btn">🔍</button>
             <div id="searchSuggestions" class="search-suggestions-box"></div>
           </form>
@@ -42,6 +44,8 @@
     {% else %}
     <ul class="nav-links">
       <li><a href="{{ url_for('index') }}">Store</a></li>
+      <li><a href="#about-section">About</a></li>
+      <li><a href="#contact-section">Contact</a></li>
     </ul>
     <div class="nav-actions">
       <a href="{{ url_for('login') }}">Sign In</a>
@@ -136,6 +140,35 @@
 <div class="page">
   {{ self.content() }}
 </div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col" id="about-section">
+        <h3>About TechMart</h3>
+        <p>TechMart is a premium e-commerce platform built for high-performance electronic trading. This is a <strong>demo project</strong> built for educational purposes to demonstrate modern web development practices.</p>
+      </div>
+      <div class="footer-col" id="contact-section">
+        <h3>Contact Info</h3>
+        <p>Email: demo@techmart.example.com</p>
+        <p>Support: 1-800-TECHMART</p>
+      </div>
+      <div class="footer-col">
+        <h3>Legal</h3>
+        <p>Terms of Service</p>
+        <p>Privacy Policy</p>
+      </div>
+      <div class="footer-col">
+        <h3>Connect</h3>
+        <p><a href="https://github.com/mithil27360/TechMart" target="_blank" rel="noopener noreferrer">GitHub Project Repo</a></p>
+        <p>LinkedIn</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 TechMart Demo Store. All rights reserved. <span class="trust-badge">🛡️ 256-bit SSL Secure</span></p>
+    </div>
+  </div>
+</footer>
 {% endif %}
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>

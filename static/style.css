@@ -1,8 +1,8 @@
 /* ============================================================
-   MarketNest — Apple-Inspired Design System
+   TechMart — Premium Tech Marketplace Design System
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   --white: #ffffff;
@@ -24,7 +24,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--white);
   color: var(--black);
   -webkit-font-smoothing: antialiased;
@@ -53,11 +53,16 @@ body {
   padding: 0 22px;
 }
 .nav-logo {
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 900;
   color: var(--black);
   text-decoration: none;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
+  display: flex;
+  align-items: center;
+}
+.logo-highlight {
+  color: var(--blue);
 }
 .nav-links {
   display: flex;
@@ -744,11 +749,63 @@ textarea { resize: vertical; }
 /* ── Footer ── */
 .site-footer {
   border-top: 1px solid var(--grey-200);
-  padding: 40px 40px;
+  padding: 80px 40px 40px;
   background: var(--grey-100);
 }
-.footer-inner { max-width: 980px; margin: 0 auto; text-align: center; }
-.footer-inner p { font-size: 0.78rem; color: var(--grey-400); line-height: 1.7; }
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 60px;
+  text-align: left;
+}
+.footer-col h3 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--black);
+  margin-bottom: 20px;
+}
+.footer-col p {
+  font-size: 0.8125rem;
+  color: var(--grey-400);
+  line-height: 1.8;
+  margin-bottom: 8px;
+}
+.footer-col a {
+  color: var(--blue);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.footer-col a:hover {
+  opacity: 0.7;
+}
+.footer-bottom {
+  border-top: 1px solid var(--grey-200);
+  padding-top: 30px;
+  text-align: center;
+}
+.footer-bottom p {
+  font-size: 0.78rem;
+  color: var(--grey-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.trust-badge {
+  color: #1a7f3c;
+  font-weight: 600;
+  background: #e9f9f0;
+  padding: 2px 10px;
+  border-radius: 980px;
+  font-size: 0.7rem;
+}
 
 /* ── Admin Dashboard ── */
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 32px; }

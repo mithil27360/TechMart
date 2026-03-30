@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Electronic Marketplace{% endblock %}
+{% block title %}The Premium Tech Marketplace{% endblock %}
 
 {% block content %}
 
 <!-- Hero -->
 <section class="hero-block">
-  <p class="hero-eyebrow">MarketNest Store</p>
-  <h1 class="hero-headline">Buy. Sell.<br>Get Notified.</h1>
-  <p class="hero-sub">The minimalist marketplace for electronics. Discover the finest devices, or list yours for matching buyers — instantly.</p>
+  <p class="hero-eyebrow">TechMart Global</p>
+  <h1 class="hero-headline">Pro Tech.<br>Pro Trading.</h1>
+  <p class="hero-sub">TechMart is a high-performance e-commerce demo project built for learning purposes. Discover the finest devices, or list yours for matching buyers — instantly.</p>
   <div class="hero-links">
     <a href="{{ url_for('register') }}" class="link-primary">Get Started <i class="chevron">›</i></a>
     <a href="{{ url_for('login') }}" class="link-secondary">Sign In <i class="chevron">›</i></a>
@@ -16,9 +16,9 @@
 
 <!-- Product 1 — iPhone -->
 <section class="product-block dark">
-  <p class="product-eyebrow">New</p>
+  <p class="product-eyebrow">New Arrival</p>
   <h2 class="product-headline">iPhone 17 Pro.</h2>
-  <p class="product-sub">Forged from titanium. Engineered for everything.</p>
+  <p class="product-sub">Forged from titanium. Engineered for everything. Experience the future of mobile technology.</p>
   <div class="product-img-wrap">
     <img src="{{ url_for('static', filename='images/apple-iphone-17-pro-back-1.webp') }}"
          alt="iPhone 17 Pro — Titanium Black" loading="lazy">
@@ -31,12 +31,12 @@
 
 <!-- Product 2 — Shopping -->
 <section class="product-block grey">
-  <p class="product-eyebrow">Discover</p>
+  <p class="product-eyebrow">Smart Discovery</p>
   <h2 class="product-headline">Shop. Smarter.</h2>
-  <p class="product-sub">Browse thousands of curated electronics from trusted sellers. Filter by category and price in seconds.</p>
+  <p class="product-sub">Browse thousands of curated electronics from trusted sellers. Our precision filters find exactly what you need in milliseconds.</p>
   <div class="product-img-wrap" style="max-width:860px;">
     <img src="{{ url_for('static', filename='images/shopping.webp') }}"
-         alt="MarketNest Shopping Experience" loading="lazy">
+         alt="TechMart Shopping Experience" loading="lazy">
   </div>
   <div class="product-links">
     <a href="{{ url_for('register') }}" class="link-primary">Start browsing <i class="chevron">›</i></a>
@@ -45,9 +45,9 @@
 
 <!-- Product 3 — Shopping full -->
 <section class="product-block">
-  <p class="product-eyebrow">For Sellers</p>
+  <p class="product-eyebrow">Global Selling</p>
   <h2 class="product-headline">List. Notify.<br>Sell.</h2>
-  <p class="product-sub">Post your item in seconds. Our trigger-powered system auto-alerts every buyer whose interests match — no effort needed.</p>
+  <p class="product-sub">Post your item in seconds. Our algorithmic matching system auto-alerts every buyer whose interests match — zero effort required.</p>
   <div class="product-img-wrap" style="max-width:900px;">
     <img src="{{ url_for('static', filename='images/shopping (1).webp') }}"
          alt="Seller Dashboard" loading="lazy">
@@ -59,37 +59,37 @@
 
 <!-- Feature Grid -->
 <section class="feature-section">
-  <p class="section-label">What's inside</p>
+  <p class="section-label">Platform Core</p>
   <div class="feature-grid">
     <div class="feat-card">
-      <span class="feat-icon">👤</span>
-      <h3 class="feat-title">User Auth</h3>
-      <p class="feat-desc">Role-based accounts for buyers and sellers with secure session management.</p>
+      <span class="feat-icon">🔐</span>
+      <h3 class="feat-title">Secure Auth</h3>
+      <p class="feat-desc">Enterprise-grade role management for buyers and sellers with encrypted session security.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">📝</span>
-      <h3 class="feat-title">Item Listing</h3>
-      <p class="feat-desc">Sellers post with title, description, price and hierarchical category selection.</p>
+      <span class="feat-icon">⚡</span>
+      <h3 class="feat-title">High-Speed Listing</h3>
+      <p class="feat-desc">List products with rich metadata, hierarchical categorization, and real-time stock tracking.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">🗂️</span>
-      <h3 class="feat-title">Category Hierarchy</h3>
-      <p class="feat-desc">Structured parent-child categories like Electronics › Phones for precise browsing.</p>
+      <span class="feat-icon">📂</span>
+      <h3 class="feat-title">Rich Hierarchy</h3>
+      <p class="feat-desc">Precision navigation across deep-nested tech categories like Components › GPUs › NVIDIA.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">🔍</span>
-      <h3 class="feat-title">Search & Filter</h3>
-      <p class="feat-desc">Full-text search with category and price range filters — instant results.</p>
+      <span class="feat-icon">🎯</span>
+      <h3 class="feat-title">Smart Search</h3>
+      <p class="feat-desc">Full-text search indexed for speed, supporting multi-attribute filtering and price range analysis.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">💖</span>
-      <h3 class="feat-title">Private Interests</h3>
-      <p class="feat-desc">Buyers register private interests. Sellers never see them. Your data stays yours.</p>
+      <span class="feat-icon">🛡️</span>
+      <h3 class="feat-title">Private Tastes</h3>
+      <p class="feat-desc">Users register specific tech interests privately. Sellers never see who is watching, ensuring buyer privacy.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">🔔</span>
-      <h3 class="feat-title">Auto Notifications</h3>
-      <p class="feat-desc">A database trigger fires instantly when a matching item is listed. Zero delay.</p>
+      <span class="feat-icon">📢</span>
+      <h3 class="feat-title">Instant Triggering</h3>
+      <p class="feat-desc">On-listing database triggers fire alerts to matching buyers the moment a product hits the site.</p>
     </div>
   </div>
 </section>
