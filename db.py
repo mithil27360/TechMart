@@ -10,6 +10,8 @@ DB_CONFIG = {
     "user":         os.getenv("MYSQL_USER", "root"),
     "password":     os.getenv("MYSQL_PASSWORD", ""),
     "database":     os.getenv("MYSQL_DATABASE", "techmart"),
+    "port":         int(os.getenv("MYSQL_PORT", 3306)),
+    "ssl_ca":       os.getenv("MYSQL_SSL_CA"),
     "unix_socket": os.getenv("MYSQL_UNIX_SOCKET"),
 }
 
@@ -31,7 +33,10 @@ def init_db():
         "host": DB_CONFIG["host"],
         "user": DB_CONFIG["user"],
         "password": DB_CONFIG["password"],
+        "port": DB_CONFIG["port"],
     }
+    if DB_CONFIG.get("ssl_ca"):
+        base_cfg["ssl_ca"] = DB_CONFIG["ssl_ca"]
     if DB_CONFIG.get("unix_socket"):
         base_cfg["unix_socket"] = DB_CONFIG["unix_socket"]
     try:
