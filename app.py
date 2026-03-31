@@ -11,6 +11,7 @@ import mysql.connector
 from dotenv import load_dotenv
 
 load_dotenv()
+db.init_db()  # Auto-initialize database on startup (for Render Free Tier)
 
 app = Flask(__name__)
 # Render/Heroku use proxies, this ensures https is detected correctly

@@ -19,6 +19,12 @@ def get_connection():
     try:
         # Filter out None values from DB_CONFIG (like unix_socket if not set)
         config = {k: v for k, v in DB_CONFIG.items() if v is not None}
+        
+        # Aiven/Remote DB compatibility: Enable SSL if host is remote
+        if config.get("host") not in ("localhost", "127.0.0.1") and not config.get("ssl_ca"):
+            config["ssl_mode"] = "REQUIRED"
+            config["ssl_verify_identity"] = False
+
         conn = mysql.connector.connect(**config)
         if conn.is_connected():
             return conn
@@ -37,6 +43,10 @@ def init_db():
     }
     if DB_CONFIG.get("ssl_ca"):
         base_cfg["ssl_ca"] = DB_CONFIG["ssl_ca"]
+    elif DB_CONFIG.get("host") not in ("localhost", "127.0.0.1"):
+        base_cfg["ssl_mode"] = "REQUIRED"
+        base_cfg["ssl_verify_identity"] = False
+
     if DB_CONFIG.get("unix_socket"):
         base_cfg["unix_socket"] = DB_CONFIG["unix_socket"]
     try:
