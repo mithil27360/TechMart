@@ -44,8 +44,8 @@
     {% else %}
     <ul class="nav-links">
       <li><a href="{{ url_for('index') }}">Store</a></li>
-      <li><a href="#about-section">About</a></li>
-      <li><a href="#contact-section">Contact</a></li>
+      <li><a href="{{ url_for('about') }}">About</a></li>
+      <li><a href="{{ url_for('contact') }}">Contact</a></li>
     </ul>
     <div class="nav-actions">
       <a href="{{ url_for('login') }}">Sign In</a>
@@ -144,14 +144,14 @@
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-grid">
-      <div class="footer-col" id="about-section">
+      <div class="footer-col">
         <h3>About TechMart</h3>
-        <p>TechMart is a premium e-commerce platform built for high-performance electronic trading. This is a <strong>demo project</strong> built for educational purposes to demonstrate modern web development practices.</p>
+        <p>TechMart is the world's most advanced marketplace for high-performance electronics. We connect professional sellers with the most demanding buyers across the globe with unmatched precision.</p>
       </div>
-      <div class="footer-col" id="contact-section">
-        <h3>Contact Info</h3>
-        <p>Email: demo@techmart.example.com</p>
-        <p>Support: 1-800-TECHMART</p>
+      <div class="footer-col">
+        <h3>Contact Support</h3>
+        <p>Email: support@techmart.com</p>
+        <p>Support: 1-888-TECH-MART</p>
       </div>
       <div class="footer-col">
         <h3>Legal</h3>
@@ -165,7 +165,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2026 TechMart Demo Store. All rights reserved. <span class="trust-badge">🛡️ 256-bit SSL Secure</span></p>
+      <p>&copy; 2026 TechMart Global. All rights reserved. <span class="trust-badge">🛡️ 256-bit SSL Secure</span></p>
     </div>
   </div>
 </footer>

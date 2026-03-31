@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}About TechMart{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">The TechMart Story</p>
+  <h1 class="page-title">Empowering Innovation.</h1>
+  <p class="page-sub">TechMart was founded with a single mission: to revolutionize the way high-performance electronics are traded globally.</p>
+
+  <section class="card-box" style="margin-top: 40px;">
+    <h2>Our Vision</h2>
+    <p style="margin-top:15px; line-height: 1.6; color: var(--grey-400);">We believe that access to the world's most advanced technology should be seamless and secure. By connecting professional sellers with a global network of buyers, we facilitate the exchange of innovation that drives the future.</p>
+  </section>
+
+  <section class="card-box">
+    <h2>Why TechMart?</h2>
+    <p style="margin-top:15px; line-height: 1.6; color: var(--grey-400);">Our platform is built on three core pillars:</p>
+    <ul style="margin-top:15px; margin-left: 20px; line-height: 2; color: var(--grey-400);">
+        <li><strong>Precision Matching:</strong> Our proprietary algorithms ensure that every listing reaches its ideal audience.</li>
+        <li><strong>Unmatched Trust:</strong> We maintain a rigorous standard for all participants to ensure every transaction is secure.</li>
+        <li><strong>Global Reach:</strong> TechMart spans across borders, bringing local tech to a global stage.</li>
+    </ul>
+  </section>
+
+  <div style="margin-top: 60px; text-align: center;">
+    <a href="{{ url_for('register') }}" class="btn-submit" style="display:inline-block; padding: 14px 28px; text-decoration: none;">Join the Network</a>
+  </div>
+</div>
+{% endblock %}

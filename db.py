@@ -9,7 +9,7 @@ DB_CONFIG = {
     "host":         os.getenv("MYSQL_HOST", "localhost"),
     "user":         os.getenv("MYSQL_USER", "root"),
     "password":     os.getenv("MYSQL_PASSWORD", ""),
-    "database":     os.getenv("MYSQL_DATABASE", "marketnest"),
+    "database":     os.getenv("MYSQL_DATABASE", "techmart"),
     "unix_socket": os.getenv("MYSQL_UNIX_SOCKET"),
 }
 

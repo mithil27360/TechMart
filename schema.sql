@@ -121,7 +121,7 @@ insert into users (name, email, password, role) values
 ('Rahul', 'rahul@gmail.com', '123', 'buyer'),
 ('Ananya', 'ananya@gmail.com', '123', 'seller'),
 ('Kiran', 'kiran@gmail.com', '123', 'buyer'),
-('Administrator', 'admin@marketnest.com', 'admin123', 'admin');
+('Administrator', 'admin@techmart.com', 'admin123', 'admin');
 
 insert into categories (name, parent_id) values
 ('Electronics', null), ('Phones', 1), ('Laptops', 1);

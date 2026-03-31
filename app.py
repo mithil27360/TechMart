@@ -283,6 +283,14 @@ def auth_callback():
     flash(f"Logged in with Google as {user['name']}!", "success")
     return redirect(url_for('browse') if user['role'] == 'buyer' else url_for('post_item'))
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
 @app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
     if 'user_id' not in session: return redirect(url_for('login'))
