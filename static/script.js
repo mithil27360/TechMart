@@ -38,7 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (suggestions.length > 0) {
           suggestionsBox.innerHTML = suggestions.map(s => `
             <a href="/browse?q=${encodeURIComponent(s.title)}" class="suggestion-item">
-              <span class="s-title">${s.title}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                ${s.primary_image ? `<img src="/static/uploads/${s.primary_image}" style="width:24px;height:24px;border-radius:4px;object-fit:cover;">` : `<span style="display:inline-block;width:24px;height:24px;border-radius:4px;background:var(--grey-100);text-align:center;line-height:24px;font-size:0.7rem;">📦</span>`}
+                <span class="s-title">${s.title}</span>
+              </div>
               <span class="s-price">₹${s.price.toLocaleString()}</span>
             </a>
           `).join('');

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Edit Listing{% endblock %}
+
+{% block content %}
+<div class="inner-page">
+  <p class="page-eyebrow">Seller</p>
+  <h1 class="page-title">Edit Listing</h1>
+  <p class="page-sub">Update the details of your marketplace offering.</p>
+
+  <div class="card-box">
+    <form method="POST" action="{{ url_for('edit_item', item_id=item.item_id) }}">
+      
+      <div class="form-group">
+        <label for="title">Listing Title</label>
+        <input type="text" id="title" name="title" required value="{{ item.title }}">
+      </div>
+      
+      <div class="form-group">
+        <label for="description">Detailed Description</label>
+        <textarea id="description" name="description" required>{{ item.description }}</textarea>
+      </div>
+
+      <!-- Live Order Info Readonly -->
+      <div class="info-note" style="margin-top:24px;">
+        <strong>Performance:</strong> This item has been sold {{ item.order_count }} times.
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="price">Price (₹)</label>
+          <input type="number" id="price" name="price" step="0.01" required value="{{ item.price }}">
+        </div>
+        <div class="form-group">
+          <label for="quantity">Stock Quantity</label>
+          <input type="number" id="quantity" name="quantity" min="0" required value="{{ item.quantity }}">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category_id">Category</label>
+          <select id="category_id" name="category_id" required>
+            {% for cat_id, cat_info in categories.items() %}
+              <option value="{{ cat_id }}" disabled style="font-weight:700;">{{ cat_info.name }}</option>
+              {% for child in cat_info.children %}
+                <option value="{{ child.category_id }}" {% if item.category_id == child.category_id %}selected{% endif %}>
+                  &nbsp;&nbsp;&mdash; {{ child.name }}
+                </option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="condition">Condition</label>
+          <select id="condition" name="condition" required>
+            <option value="new" {% if item.condition_name == 'new' %}selected{% endif %}>Brand New</option>
+            <option value="used" {% if item.condition_name == 'used' %}selected{% endif %}>Used</option>
+            <option value="refurbished" {% if item.condition_name == 'refurbished' %}selected{% endif %}>Refurbished</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button type="submit" class="submit-btn" style="flex:1;">Save Changes</button>
+        <a href="{{ url_for('listings') }}" class="btn-del" style="line-height:44px;padding:0 24px;text-align:center;text-decoration:none;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

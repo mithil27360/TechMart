@@ -14,13 +14,18 @@
         <span class="cat-chip">{{ item.category_name }}</span>
         <span class="cat-chip" style="background:var(--grey-100);">{{ item.item_condition | upper }}</span>
       </div>
-      <h3 class="item-title">{{ item.title }}</h3>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <h3 class="item-title">{{ item.title }}</h3>
+        <span class="stock-badge {{ 'out-of-stock' if item.quantity == 0 else ('low-stock' if item.quantity < 3 else 'in-stock') }}">
+          {{ item.quantity }} left
+        </span>
+      </div>
       <p class="item-price">₹{{ "{:,.0f}".format(item.price) }}</p>
       
       <div class="item-actions" style="margin-top: 24px;">
         <form action="{{ url_for('buy_item', item_id=item.item_id) }}" method="POST" style="flex:1;">
           <input type="hidden" name="quantity" value="1">
-          <button type="submit" class="buy-btn" style="width:100%;">Buy Now</button>
+          <button type="submit" class="buy-btn" style="width:100%;" {% if item.quantity == 0 %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}>Buy Now</button>
         </form>
         <form action="{{ url_for('remove_wish', wish_id=item.wishlist_id) }}" method="POST">
           <button type="submit" class="btn-del" style="padding:10px 14px;border-radius:10px;">Remove</button>

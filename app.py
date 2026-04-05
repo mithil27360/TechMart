@@ -84,9 +84,10 @@ def search_suggestions():
     cursor = conn.cursor(dictionary=True)
     
     query = """
-        SELECT item_id, title, price, quantity 
-        FROM items 
-        WHERE (title LIKE %s OR description LIKE %s) AND quantity > 0
+        SELECT i.item_id, i.title, i.price, i.quantity, img.image_url as primary_image
+        FROM items i 
+        LEFT JOIN items_img img ON img.item_id = i.item_id AND img.is_primary = TRUE
+        WHERE (i.title LIKE %s OR i.description LIKE %s) AND i.quantity > 0
     """
     params = [f"%{q}%", f"%{q}%"]
     
@@ -612,6 +613,56 @@ def mark_read(notif_id):
 
 # --- Order & Wishlist Routes ---
 
+@app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
+def edit_item(item_id):
+    if 'user_id' not in session or session['role'] != 'seller':
+        return redirect(url_for('login'))
+        
+    conn = db.get_connection()
+    if not conn: return "DB Error"
+    cursor = conn.cursor(dictionary=True)
+    
+    # Verify ownership
+    cursor.execute("""
+        SELECT i.*, cond.condition_name, COALESCE(SUM(oi.quantity), 0) as order_count
+        FROM items i 
+        JOIN conditions cond ON i.condition_id = cond.condition_id
+        LEFT JOIN order_items oi ON oi.item_id = i.item_id
+        WHERE i.item_id = %s AND i.seller_id = %s
+        GROUP BY i.item_id, cond.condition_name
+    """, (item_id, session['user_id']))
+    item = cursor.fetchone()
+    
+    if not item:
+        cursor.close()
+        conn.close()
+        flash("Item not found or access denied.", "error")
+        return redirect(url_for('listings'))
+        
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        quantity = request.form.get('quantity')
+        category_id = request.form.get('category_id')
+        condition = request.form.get('condition')
+        
+        cursor.execute("""
+            UPDATE items 
+            SET title = %s, description = %s, price = %s, quantity = %s, category_id = %s, 
+                condition_id = (SELECT condition_id FROM conditions WHERE condition_name = %s)
+            WHERE item_id = %s
+        """, (title, description, price, quantity, category_id, condition, item_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash("Listing updated successfully.", "success")
+        return redirect(url_for('listings'))
+        
+    cursor.close()
+    conn.close()
+    return render_template('edit_item.html', item=item, categories=get_categories())
+
 @app.route('/buy/<int:item_id>', methods=['POST'])
 def buy_item(item_id):
     if 'user_id' not in session or session['role'] != 'buyer':
@@ -722,7 +773,7 @@ def wishlist():
             flash("Already in your wishlist.", "info")
             
     cursor.execute("""
-        SELECT w.*, i.title, i.price, cond.condition_name as item_condition, c.name as category_name 
+        SELECT w.*, i.title, i.price, i.quantity, cond.condition_name as item_condition, c.name as category_name 
         FROM wishlist w 
         JOIN items i ON w.item_id = i.item_id 
         JOIN categories c ON i.category_id = c.category_id 

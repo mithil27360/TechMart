@@ -34,6 +34,7 @@
           <th>Stock</th>
           <th>Orders</th>
           <th>Listed</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -64,9 +65,12 @@
             <span style="color:var(--grey-400);font-size:0.8rem;"> sold</span>
           </td>
           <td style="color:var(--grey-400);">{{ item.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            <a href="{{ url_for('edit_item', item_id=item.item_id) }}" class="btn-submit" style="padding:6px 14px;font-size:0.75rem;text-decoration:none;display:inline-block;width:auto;margin-top:0;">Edit</a>
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="7" style="text-align:center;color:var(--grey-400);padding:48px;">
+        <tr><td colspan="8" style="text-align:center;color:var(--grey-400);padding:48px;">
           You haven't listed anything yet. <a href="{{ url_for('post_item') }}" style="color:var(--blue);">Post your first item →</a>
         </td></tr>
         {% endfor %}
