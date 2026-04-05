@@ -967,3 +967,19 @@ textarea { resize: vertical; }
   text-transform: uppercase;
   white-space: nowrap;
 }
+
+/* ── Search Spinner ── */
+.nav-search-form { position: relative; }
+.search-spinner {
+  position: absolute;
+  right: 42px; top: 50%;
+  transform: translateY(-50%);
+  width: 14px; height: 14px;
+  border: 2px solid var(--grey-200);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+.search-spinner.active { display: block; }
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }

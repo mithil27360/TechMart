@@ -56,17 +56,20 @@ def get_categories():
                 hierarchy[cat['parent_id']]['children'].append(cat)
     return hierarchy
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 @app.context_processor
-def inject_notif_count():
+def inject_globals():
     notif_count = 0
     if 'user_id' in session:
         conn = db.get_connection()
-        if conn:
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT COUNT(*) as count FROM notifications WHERE user_id = %s AND is_read = false", (session['user_id'],))
-            notif_count = cursor.fetchone()['count']
-            cursor.close()
-            conn.close()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM notifications WHERE user_id = %s AND is_read = FALSE", (session['user_id'],))
+        notif_count = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
     return dict(notif_count=notif_count)
 
 # --- API Routes ---
@@ -188,12 +191,12 @@ def login():
             session['name'] = user['name']
             session['role'] = user['role']
             flash(f"Welcome back, {user['name']}!", "success")
-            if user['role'] == 'buyer':
-                return redirect(url_for('browse'))
-            elif user['role'] == 'admin':
+            if user['role'] == 'admin':
                 return redirect(url_for('admin_dashboard'))
-            else:
+            elif user['role'] == 'seller':
                 return redirect(url_for('post_item'))
+            else:
+                return redirect(url_for('browse'))
         else:
             flash("Invalid email or password.", "error")
             

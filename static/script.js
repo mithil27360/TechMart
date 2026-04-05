@@ -23,18 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const suggestionsBox = document.getElementById('searchSuggestions');
 
   if (searchInput && suggestionsBox) {
+    const spinner = document.getElementById('searchSpinner');
     searchInput.addEventListener('input', async (e) => {
       const q = e.target.value.trim();
       if (q.length < 2) {
         suggestionsBox.innerHTML = '';
         suggestionsBox.classList.remove('show');
+        if (spinner) spinner.classList.remove('active');
         return;
       }
 
+      if (spinner) spinner.classList.add('active');
       try {
         const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`);
         const suggestions = await res.json();
         
+        if (spinner) spinner.classList.remove('active');
         if (suggestions.length > 0) {
           suggestionsBox.innerHTML = suggestions.map(s => `
             <a href="/browse?q=${encodeURIComponent(s.title)}" class="suggestion-item">
@@ -61,6 +65,29 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestionsBox.classList.remove('show');
       }
     });
+  }
+
+  // Registration Role Cards Interactive Logic
+  const roleRadios = document.querySelectorAll('input[name="role"]');
+  if (roleRadios.length > 0) {
+    const updateRoleUI = () => {
+      roleRadios.forEach(radio => {
+        const card = radio.nextElementSibling;
+        if (radio.checked) {
+          card.style.borderColor = 'var(--blue)';
+          card.style.background = 'var(--blue-50)';
+          card.style.transform = 'translateY(-2px)';
+          card.style.boxShadow = '0 4px 12px rgba(0, 113, 227, 0.1)';
+        } else {
+          card.style.borderColor = 'var(--grey-200)';
+          card.style.background = 'transparent';
+          card.style.transform = 'none';
+          card.style.boxShadow = 'none';
+        }
+      });
+    };
+    roleRadios.forEach(r => r.addEventListener('change', updateRoleUI));
+    updateRoleUI(); // Initial run
   }
 
   // Auto-dismiss flash messages after 4s

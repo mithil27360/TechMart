@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}404 — Page Not Found{% endblock %}
+
+{% block content %}
+<div class="inner-page" style="text-align: center; padding: 120px 20px;">
+  <p style="font-size: 5rem; font-weight: 900; color: var(--grey-200); margin-bottom: 24px;">404</p>
+  <h1 class="page-title">Lost in Tech?</h1>
+  <p class="page-sub" style="margin-bottom: 40px;">The page you're looking for doesn't exist or has been moved to another dimension.</p>
+  
+  <div style="display: flex; gap: 16px; justify-content: center;">
+    <a href="{{ url_for('index') }}" class="nav-cta" style="padding: 12px 32px; font-size: 1rem; text-decoration: none;">Go Home</a>
+    <a href="{{ url_for('browse') }}" class="btn-submit" style="padding: 12px 32px; font-size: 1rem; text-decoration: none; background: var(--grey-100); color: var(--black); width: auto; margin-top: 0;">Marketplace</a>
+  </div>
+  
+  <div style="margin-top: 80px; color: var(--grey-400); font-size: 0.8rem; font-style: italic;">
+    "Not all who wander are lost... but this link definitely is."
+  </div>
+</div>
+{% endblock %}

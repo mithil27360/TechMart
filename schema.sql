@@ -163,9 +163,12 @@ CREATE TABLE search_history (
 -- 4. INDEXES
 CREATE INDEX idx_items_cat ON items(category_id);
 CREATE INDEX idx_items_price ON items(price);
+CREATE FULLTEXT INDEX idx_items_search ON items(title, description);
+
 CREATE INDEX idx_interests_user ON interests(user_id);
 CREATE INDEX idx_notif_user ON notifications(user_id);
 CREATE INDEX idx_matching_interests ON interests(category_id, min_price, max_price);
+
 
 -- 5. SEED INITIAL DATA
 INSERT INTO users (name, email, password, role_id) VALUES
@@ -182,8 +185,18 @@ INSERT INTO items (title, description, price, category_id, seller_id, condition_
 ('MacBook Air', 'Silicon M1, Space Grey', 75000, 3, 2, 1, 3),            -- new
 ('Mac Studio Silicon M2', 'Ultra performance desktop', 150000, 1, 2, 1, 2); -- new
 
--- 6. PROCEDURES
+-- 6. VIEWS (Complex Data Representation)
+CREATE OR REPLACE VIEW category_sales_summary AS
+SELECT c.name as category_name, COUNT(oi.order_item_id) as total_items_sold, COALESCE(SUM(oi.price_at_purchase * oi.quantity), 0) as total_revenue
+FROM categories c
+LEFT JOIN items i ON c.category_id = i.category_id
+LEFT JOIN order_items oi ON i.item_id = oi.item_id
+GROUP BY c.category_id, c.name;
+
+-- 7. PROCEDURES & FUNCTIONS
 DELIMITER $$
+
+-- Procedure 1: Get Notifications
 CREATE PROCEDURE get_notifications(IN p_user_id INT)
 BEGIN
     SELECT n.*, i.title, i.price 
@@ -193,14 +206,38 @@ BEGIN
     ORDER BY n.sent_at DESC;
 END $$
 
+-- Procedure 2: Mark Notification as Read
 CREATE PROCEDURE mark_notification_read(IN p_notif_id INT, IN p_user_id INT)
 BEGIN
     UPDATE notifications SET is_read = TRUE 
     WHERE notification_id = p_notif_id AND user_id = p_user_id;
 END $$
+
+-- Function 1: Compute Seller Rating
+CREATE FUNCTION get_seller_rating(p_seller_id INT) RETURNS DECIMAL(3,1)
+DETERMINISTIC
+BEGIN
+    DECLARE avg_rating DECIMAL(3,1);
+    DECLARE total_orders INT;
+    
+    SELECT COUNT(*) INTO total_orders FROM order_items WHERE seller_id = p_seller_id;
+    
+    IF total_orders = 0 THEN
+        RETURN 0.0;
+    END IF;
+    
+    -- Mock dynamic rating based on orders for demo purposes
+    SET avg_rating = 4.5 + (total_orders * 0.1);
+    IF avg_rating > 5.0 THEN
+        SET avg_rating = 5.0;
+    END IF;
+    
+    RETURN avg_rating;
+END $$
+
 DELIMITER ;
 
--- 7. TRIGGERS
+-- 8. TRIGGERS
 DELIMITER $$
 CREATE TRIGGER notify_users_after_item
 AFTER INSERT ON items

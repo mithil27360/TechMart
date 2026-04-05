@@ -45,3 +45,7 @@ logs/
 # ── Database dumps ───────────────────────
 *.sql.bak
 *.dump
+
+# ── Project Prep ──────────────────────────
+prep/
+
