@@ -3,7 +3,6 @@ import random
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
-from authlib.integrations.flask_client import OAuth
 from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 import db
@@ -18,15 +17,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "techmart_secret_key")
 
-# --- OAuth & Mail Config ---
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'}
-)
+# --- Mail Config ---
 
 app.config.update(
     MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.gmail.com"),
@@ -236,53 +227,7 @@ def login():
             
     return render_template('login.html')
 
-# --- Social Auth Routes ---
 
-@app.route('/login/google')
-def login_google():
-    redirect_uri = url_for('auth_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route('/auth/callback')
-def auth_callback():
-    token = google.authorize_access_token()
-    user_info = token.get('userinfo')
-    if not user_info:
-        flash("Google authentication failed.", "error")
-        return redirect(url_for('login'))
-    
-    email = user_info['email']
-    google_id = user_info['sub']
-    name = user_info.get('name', email.split('@')[0])
-    
-    conn = db.get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE google_id = %s OR email = %s", (google_id, email))
-    user = cursor.fetchone()
-    
-    if user:
-        # Link Google ID if not present
-        if not user['google_id']:
-            cursor.execute("UPDATE users SET google_id = %s WHERE user_id = %s", (google_id, user['user_id']))
-            conn.commit()
-    else:
-        # Create new user (default to buyer)
-        cursor.execute("INSERT INTO users (name, email, google_id, role, password, is_verified) VALUES (%s, %s, %s, 'buyer', 'oauth_user', True)", 
-                       (name, email, google_id))
-        conn.commit()
-        cursor.execute("SELECT * FROM users WHERE google_id = %s", (google_id,))
-        user = cursor.fetchone()
-
-    cursor.close()
-    conn.close()
-    
-    session['user_id'] = user['user_id']
-    session['name'] = user['name']
-    session['role'] = user['role']
-    session['is_verified'] = True # Google matches are verified by default
-    
-    flash(f"Logged in with Google as {user['name']}!", "success")
-    return redirect(url_for('browse') if user['role'] == 'buyer' else url_for('post_item'))
 
 @app.route('/about')
 def about():

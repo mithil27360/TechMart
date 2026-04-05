@@ -5,20 +5,27 @@ from dotenv import load_dotenv
 
 load_dotenv()  # reads .env into os.environ
 
-DB_CONFIG = {
-    "host":         os.getenv("MYSQL_HOST", "localhost"),
-    "user":         os.getenv("MYSQL_USER", "root"),
-    "password":     os.getenv("MYSQL_PASSWORD", ""),
-    "database":     os.getenv("MYSQL_DATABASE", "techmart"),
-    "port":         int(os.getenv("MYSQL_PORT", 3306)),
-    "ssl_ca":       os.getenv("MYSQL_SSL_CA"),
-    "unix_socket": os.getenv("MYSQL_UNIX_SOCKET"),
-}
+def get_db_config():
+    """Builds DB_CONFIG dynamically to ensure latest environment variables are used."""
+    load_dotenv() # Refresh env in case of runtime changes
+    config = {
+        "host":         os.getenv("MYSQL_HOST", "localhost"),
+        "user":         os.getenv("MYSQL_USER", "root"),
+        "password":     os.getenv("MYSQL_PASSWORD", ""),
+        "database":     os.getenv("MYSQL_DATABASE", "techmart"),
+        "port":         int(os.getenv("MYSQL_PORT", 3306)),
+        "ssl_ca":       os.getenv("MYSQL_SSL_CA"),
+        "unix_socket": os.getenv("MYSQL_UNIX_SOCKET"),
+    }
+    return config
 
 def get_connection():
     try:
-        # Filter out None values from DB_CONFIG
-        config = {k: v for k, v in DB_CONFIG.items() if v is not None}
+        # Build config dynamically from environment
+        raw_config = get_db_config()
+        
+        # Filter out None values
+        config = {k: v for k, v in raw_config.items() if v is not None}
         
         # Priority: If host is remote, DO NOT use unix_socket
         if config.get("host") not in ("localhost", "127.0.0.1"):
@@ -34,22 +41,23 @@ def get_connection():
         if conn.is_connected():
             return conn
     except Error as e:
-        print(f"MySQL connection error: {e}")
+        print(f"DEBUG: MySQL connection error: {e}")
     return None
 
 def init_db():
-    db_name = DB_CONFIG["database"]
+    config = get_db_config()
+    db_name = config["database"]
     # Only attempt to create database if on localhost
-    if DB_CONFIG.get("host") in ("localhost", "127.0.0.1"):
+    if config.get("host") in ("localhost", "127.0.0.1"):
         try:
             base_cfg = {
-                "host": DB_CONFIG["host"],
-                "user": DB_CONFIG["user"],
-                "password": DB_CONFIG["password"],
-                "port": DB_CONFIG["port"],
+                "host": config["host"],
+                "user": config["user"],
+                "password": config["password"],
+                "port": config["port"],
             }
-            if DB_CONFIG.get("unix_socket"):
-                base_cfg["unix_socket"] = DB_CONFIG["unix_socket"]
+            if config.get("unix_socket"):
+                base_cfg["unix_socket"] = config["unix_socket"]
             
             base = mysql.connector.connect(**base_cfg)
             cur = base.cursor()
