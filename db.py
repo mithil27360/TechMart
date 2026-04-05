@@ -17,13 +17,18 @@ DB_CONFIG = {
 
 def get_connection():
     try:
-        # Filter out None values from DB_CONFIG (like unix_socket if not set)
+        # Filter out None values from DB_CONFIG
         config = {k: v for k, v in DB_CONFIG.items() if v is not None}
         
-        # Aiven/Remote DB compatibility: Enable SSL if host is remote
-        if config.get("host") not in ("localhost", "127.0.0.1") and not config.get("ssl_ca"):
-            config["ssl_mode"] = "REQUIRED"
-            config["ssl_verify_identity"] = False
+        # Priority: If host is remote, DO NOT use unix_socket
+        if config.get("host") not in ("localhost", "127.0.0.1"):
+            config.pop("unix_socket", None)
+            
+            # Aiven/Remote DB compatibility: Enable SSL if host is remote
+            if not config.get("ssl_ca"):
+                config["ssl_disabled"] = False
+                # Some versions might require ssl_verify_identity=False if not using CA
+                config["ssl_verify_identity"] = False
 
         conn = mysql.connector.connect(**config)
         if conn.is_connected():
@@ -33,39 +38,34 @@ def get_connection():
     return None
 
 def init_db():
-    """Auto-create database if missing, then run schema.sql."""
     db_name = DB_CONFIG["database"]
-    base_cfg = {
-        "host": DB_CONFIG["host"],
-        "user": DB_CONFIG["user"],
-        "password": DB_CONFIG["password"],
-        "port": DB_CONFIG["port"],
-    }
-    if DB_CONFIG.get("ssl_ca"):
-        base_cfg["ssl_ca"] = DB_CONFIG["ssl_ca"]
-    elif DB_CONFIG.get("host") not in ("localhost", "127.0.0.1"):
-        base_cfg["ssl_mode"] = "REQUIRED"
-        base_cfg["ssl_verify_identity"] = False
-
-    if DB_CONFIG.get("unix_socket"):
-        base_cfg["unix_socket"] = DB_CONFIG["unix_socket"]
-    try:
-        base = mysql.connector.connect(**base_cfg)
-        cur = base.cursor()
-        cur.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
-        base.commit()
-        cur.close()
-        base.close()
-        print(f"Database '{db_name}' ready.")
-    except Error as e:
-        print(f"Failed to create database: {e}")
-        return
+    # Only attempt to create database if on localhost
+    if DB_CONFIG.get("host") in ("localhost", "127.0.0.1"):
+        try:
+            base_cfg = {
+                "host": DB_CONFIG["host"],
+                "user": DB_CONFIG["user"],
+                "password": DB_CONFIG["password"],
+                "port": DB_CONFIG["port"],
+            }
+            if DB_CONFIG.get("unix_socket"):
+                base_cfg["unix_socket"] = DB_CONFIG["unix_socket"]
+            
+            base = mysql.connector.connect(**base_cfg)
+            cur = base.cursor()
+            cur.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
+            base.commit()
+            cur.close()
+            base.close()
+            print(f"Database '{db_name}' ready.")
+        except Error as e:
+            print(f"Note: Skipping database creation (likely already exists or remote restricted): {e}")
 
     conn = get_connection()
     if not conn:
         return
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
     try:
         with open("schema.sql", "r") as f:
             raw = f.read()
