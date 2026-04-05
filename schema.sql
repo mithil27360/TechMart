@@ -1,179 +1,232 @@
-create table users (
-    user_id int auto_increment primary key,
-    name varchar(100) not null,
-    email varchar(100) unique not null,
-    password varchar(100) not null,
-    role varchar(10) not null,
-    google_id varchar(255) unique,
-    is_verified boolean default false,
-    otp_token varchar(6),
-    otp_expiry timestamp null,
-    created_at timestamp default current_timestamp,
-    constraint chk_role check (role in ('buyer', 'seller', 'admin'))
+-- 1. DROP EXISTING CONSTRUCTS FOR CLEAN INITIATION
+DROP PROCEDURE IF EXISTS get_notifications;
+DROP PROCEDURE IF EXISTS mark_notification_read;
+DROP TRIGGER IF EXISTS notify_users_after_item;
+DROP TRIGGER IF EXISTS notify_seller_after_order;
+
+DROP TABLE IF EXISTS search_history;
+DROP TABLE IF EXISTS items_img;
+DROP TABLE IF EXISTS wishlist;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS interests;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS conditions;
+DROP TABLE IF EXISTS order_status;
+DROP TABLE IF EXISTS roles;
+
+-- 2. LOOKUP TABLES
+CREATE TABLE roles (
+    role_id INT PRIMARY KEY AUTO_INCREMENT,
+    role_name VARCHAR(20) UNIQUE NOT NULL
 );
 
-create table categories (
-    category_id int auto_increment primary key,
-    name varchar(100) not null,
-    parent_id int,
-    description text,
-    foreign key (parent_id) references categories(category_id)
-        on delete set null
+CREATE TABLE order_status (
+    status_id INT PRIMARY KEY AUTO_INCREMENT,
+    status_name VARCHAR(20) UNIQUE NOT NULL
 );
 
-create table items (
-    item_id int auto_increment primary key,
-    title varchar(150) not null,
-    description text,
-    price decimal(10,2) not null,
-    category_id int,
-    seller_id int,
-    item_condition varchar(20) default 'new',
-    quantity int default 1,
-    created_at timestamp default current_timestamp,
-    updated_at timestamp default current_timestamp on update current_timestamp,
-    foreign key (category_id) references categories(category_id)
-        on delete set null,
-    foreign key (seller_id) references users(user_id)
-        on delete cascade,
-    constraint chk_price check (price > 0),
-    constraint chk_quantity check (quantity >= 0),
-    constraint chk_condition check (item_condition in ('new', 'used', 'refurbished'))
+CREATE TABLE conditions (
+    condition_id INT PRIMARY KEY AUTO_INCREMENT,
+    condition_name VARCHAR(20) UNIQUE NOT NULL
 );
 
-create table interests (
-    interest_id int auto_increment primary key,
-    user_id int,
-    category_id int,
-    keyword varchar(100),
-    min_price decimal(10,2),
-    max_price decimal(10,2),
-    item_condition varchar(20),
-    active boolean default true,
-    created_at timestamp default current_timestamp,
-    foreign key (user_id) references users(user_id)
-        on delete cascade,
-    foreign key (category_id) references categories(category_id)
-        on delete cascade
+-- Seed Lookup Data
+INSERT INTO roles (role_name) VALUES ('buyer'), ('seller'), ('admin');
+INSERT INTO order_status (status_name) VALUES ('pending'), ('confirmed'), ('cancelled'), ('completed');
+INSERT INTO conditions (condition_name) VALUES ('new'), ('used'), ('refurbished');
+
+-- 3. CORE ENTITIES
+CREATE TABLE users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role_id INT NOT NULL,
+    google_id VARCHAR(255) UNIQUE,
+    is_verified BOOLEAN DEFAULT FALSE,
+    otp_token VARCHAR(6),
+    otp_expiry TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id)
 );
 
-create table notifications (
-    notification_id int auto_increment primary key,
-    user_id int,
-    item_id int,
-    interest_id int,
-    is_read boolean default false,
-    message text,
-    sent_at timestamp default current_timestamp,
-    foreign key (user_id) references users(user_id)
-        on delete cascade,
-    foreign key (item_id) references items(item_id)
-        on delete cascade,
-    foreign key (interest_id) references interests(interest_id)
-        on delete set null
+CREATE TABLE categories (
+    category_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    parent_id INT,
+    description TEXT,
+    FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL
 );
 
-create table orders (
-    order_id int auto_increment primary key,
-    item_id int,
-    buyer_id int,
-    seller_id int,
-    quantity int default 1,
-    total_price decimal(10,2),
-    order_date timestamp default current_timestamp,
-    status varchar(20) default 'pending',
-    notes text,
-    foreign key (item_id) references items(item_id) on delete set null,
-    foreign key (buyer_id) references users(user_id) on delete cascade,
-    foreign key (seller_id) references users(user_id) on delete cascade
+CREATE TABLE items (
+    item_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    category_id INT NOT NULL,
+    seller_id INT NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL CHECK (price > 0),
+    condition_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE RESTRICT,
+    FOREIGN KEY (seller_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (condition_id) REFERENCES conditions(condition_id)
 );
 
-create table wishlist (
-    wishlist_id int auto_increment primary key,
-    user_id int,
-    item_id int,
-    created_at timestamp default current_timestamp,
-    foreign key (user_id) references users(user_id) on delete cascade,
-    foreign key (item_id) references items(item_id) on delete cascade,
-    unique (user_id, item_id)
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY AUTO_INCREMENT,
+    buyer_id INT NOT NULL,
+    total_price DECIMAL(10,2),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status_id INT NOT NULL,
+    notes TEXT,
+    FOREIGN KEY (buyer_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (status_id) REFERENCES order_status(status_id)
 );
 
-create table search_history (
-    search_id int auto_increment primary key,
-    user_id int,
-    query varchar(255),
-    category_id int,
-    min_price decimal(10,2),
-    max_price decimal(10,2),
-    searched_at timestamp default current_timestamp,
-    foreign key (user_id) references users(user_id) on delete cascade
+CREATE TABLE order_items (
+    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    item_id INT NOT NULL,
+    seller_id INT NOT NULL,
+    quantity INT DEFAULT 1,
+    price_at_purchase DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE RESTRICT,
+    FOREIGN KEY (seller_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT chk_quantity CHECK (quantity > 0),
+    CONSTRAINT chk_price CHECK (price_at_purchase >= 0)
 );
 
--- Indexes
-create index idx_items_cat on items(category_id);
-create index idx_items_price on items(price);
-create index idx_interests_user on interests(user_id);
-create index idx_notif_user on notifications(user_id);
-create index idx_matching_interests on interests(category_id, min_price, max_price);
+CREATE TABLE interests (
+    interest_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    category_id INT,
+    keyword VARCHAR(255),
+    min_price DECIMAL(10,2),
+    max_price DECIMAL(10,2),
+    condition_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE,
+    FOREIGN KEY (condition_id) REFERENCES conditions(condition_id),
+    CHECK (min_price <= max_price)
+);
 
--- Seeding Initial Data
-insert into users (name, email, password, role) values
-('Rahul', 'rahul@gmail.com', '123', 'buyer'),
-('Ananya', 'ananya@gmail.com', '123', 'seller'),
-('Kiran', 'kiran@gmail.com', '123', 'buyer'),
-('Administrator', 'admin@techmart.com', 'admin123', 'admin');
+CREATE TABLE notifications (
+    notification_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    item_id INT NOT NULL,
+    interest_id INT,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    message TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (interest_id) REFERENCES interests(interest_id) ON DELETE SET NULL
+);
 
-insert into categories (name, parent_id) values
+CREATE TABLE wishlist (
+    wishlist_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    item_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    UNIQUE (user_id, item_id)
+);
+
+CREATE TABLE items_img (
+    image_id INT PRIMARY KEY AUTO_INCREMENT,
+    item_id INT NOT NULL,
+    image_url TEXT NOT NULL,
+    display_order INT,
+    is_primary BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE
+);
+
+CREATE TABLE search_history (
+    search_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    query TEXT,
+    category_id INT,
+    min_price DECIMAL(10,2),
+    max_price DECIMAL(10,2),
+    searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE CASCADE
+);
+
+-- 4. INDEXES
+CREATE INDEX idx_items_cat ON items(category_id);
+CREATE INDEX idx_items_price ON items(price);
+CREATE INDEX idx_interests_user ON interests(user_id);
+CREATE INDEX idx_notif_user ON notifications(user_id);
+CREATE INDEX idx_matching_interests ON interests(category_id, min_price, max_price);
+
+-- 5. SEED INITIAL DATA
+INSERT INTO users (name, email, password, role_id) VALUES
+('Rahul', 'rahul@gmail.com', '123', 1),    -- buyer
+('Ananya', 'ananya@gmail.com', '123', 2),  -- seller
+('Kiran', 'kiran@gmail.com', '123', 1),    -- buyer
+('Administrator', 'admin@techmart.com', 'admin123', 3); -- admin
+
+INSERT INTO categories (name, parent_id) VALUES
 ('Electronics', null), ('Phones', 1), ('Laptops', 1);
 
-insert into items (title, description, price, category_id, seller_id, item_condition, quantity) values
-('iPhone 13', 'Good condition, 1 year old', 50000, 2, 2, 'used', 5),
-('MacBook Air', 'Silicon M1, Space Grey', 75000, 3, 2, 'new', 3),
-('Mac Studio Silicon M2', 'Ultra performance desktop', 150000, 1, 2, 'new', 2);
+INSERT INTO items (title, description, price, category_id, seller_id, condition_id, quantity) VALUES
+('iPhone 13', 'Good condition, 1 year old', 50000, 2, 2, 2, 5),          -- used
+('MacBook Air', 'Silicon M1, Space Grey', 75000, 3, 2, 1, 3),            -- new
+('Mac Studio Silicon M2', 'Ultra performance desktop', 150000, 1, 2, 1, 2); -- new
 
--- PROCEDURES
-delimiter $$
-create procedure get_notifications(in p_user_id int)
-begin
-    select n.*, i.title, i.price 
-    from notifications n
-    join items i on n.item_id = i.item_id
-    where n.user_id = p_user_id
-    order by n.sent_at desc;
-end $$
+-- 6. PROCEDURES
+DELIMITER $$
+CREATE PROCEDURE get_notifications(IN p_user_id INT)
+BEGIN
+    SELECT n.*, i.title, i.price 
+    FROM notifications n
+    JOIN items i ON n.item_id = i.item_id
+    WHERE n.user_id = p_user_id
+    ORDER BY n.sent_at DESC;
+END $$
 
-create procedure mark_notification_read(in p_notif_id int, in p_user_id int)
-begin
-    update notifications set is_read = true 
-    where notification_id = p_notif_id and user_id = p_user_id;
-end $$
-delimiter ;
+CREATE PROCEDURE mark_notification_read(IN p_notif_id INT, IN p_user_id INT)
+BEGIN
+    UPDATE notifications SET is_read = TRUE 
+    WHERE notification_id = p_notif_id AND user_id = p_user_id;
+END $$
+DELIMITER ;
 
--- Trigger: Advanced Search matching
-delimiter $$
-create trigger notify_users_after_item
-after insert on items
-for each row
-begin
-    insert into notifications(user_id, item_id, interest_id, message)
-    select i.user_id, new.item_id, i.interest_id, 
-           concat('New ', new.title, ' available in ', (select name from categories where category_id=new.category_id))
-    from interests i
-    where i.active = true
-    and (i.category_id is null or i.category_id = new.category_id)
-    and (i.min_price is null or new.price >= i.min_price)
-    and (i.max_price is null or new.price <= i.max_price)
-    and (i.item_condition is null or i.item_condition = new.item_condition)
-    and (i.keyword is null or new.title like concat('%', i.keyword, '%') or new.description like concat('%', i.keyword, '%'));
-end $$
+-- 7. TRIGGERS
+DELIMITER $$
+CREATE TRIGGER notify_users_after_item
+AFTER INSERT ON items
+FOR EACH ROW
+BEGIN
+    INSERT INTO notifications(user_id, item_id, interest_id, message)
+    SELECT i.user_id, NEW.item_id, i.interest_id, 
+           CONCAT('New ', NEW.title, ' available in ', (SELECT name FROM categories WHERE category_id=NEW.category_id))
+    FROM interests i
+    WHERE i.active = TRUE
+    AND (i.category_id IS NULL OR i.category_id = NEW.category_id)
+    AND (i.min_price IS NULL OR NEW.price >= i.min_price)
+    AND (i.max_price IS NULL OR NEW.price <= i.max_price)
+    AND (i.condition_id IS NULL OR i.condition_id = NEW.condition_id)
+    AND (i.keyword IS NULL OR NEW.title LIKE CONCAT('%', i.keyword, '%') OR NEW.description LIKE CONCAT('%', i.keyword, '%'));
+END $$
 
--- New Trigger: Seller Order alerts
-create trigger notify_seller_after_order
-after insert on orders
-for each row
-begin
-    insert into notifications(user_id, item_id, message)
-    values (new.seller_id, new.item_id, 
-           concat('You have a new order for ', (select title from items where item_id=new.item_id), ' from ', (select name from users where user_id=new.buyer_id)));
-end $$
-delimiter ;
+CREATE TRIGGER notify_seller_after_order
+AFTER INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    INSERT INTO notifications(user_id, item_id, message)
+    VALUES (NEW.seller_id, NEW.item_id, 
+           CONCAT('You have a new order for ', (SELECT title FROM items WHERE item_id=NEW.item_id), ' from ', (SELECT name FROM users WHERE user_id=(SELECT buyer_id FROM orders WHERE order_id=NEW.order_id))));
+END $$
+DELIMITER ;

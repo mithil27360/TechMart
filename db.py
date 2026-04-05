@@ -113,6 +113,9 @@ def init_db():
                 continue
             try:
                 cursor.execute(s)
+                try: cursor.fetchall() 
+                except: pass
+                while cursor.nextset(): pass
                 conn.commit()
             except Error as e:
                 # Ignore: table/proc already exists, duplicate seed data

@@ -168,10 +168,17 @@ def register():
             flash("Database connection failed.", "error")
             return redirect(url_for('register'))
             
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)", 
-                           (name, email, password, role))
+            cursor.execute("SELECT role_id FROM roles WHERE role_name = %s", (role,))
+            role_row = cursor.fetchone()
+            if not role_row:
+                flash("Invalid role.", "error")
+                return redirect(url_for('register'))
+            role_id = role_row['role_id']
+            
+            cursor.execute("INSERT INTO users (name, email, password, role_id) VALUES (%s, %s, %s, %s)", 
+                           (name, email, password, role_id))
             conn.commit()
             flash("Registration successful! Please login.", "success")
             return redirect(url_for('login'))
@@ -201,7 +208,7 @@ def login():
             return redirect(url_for('login'))
             
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
+        cursor.execute("SELECT u.*, r.role_name as role FROM users u JOIN roles r ON u.role_id = r.role_id WHERE u.email = %s AND u.password = %s", (email, password))
         user = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -315,7 +322,7 @@ def browse():
         query += " AND i.price <= %s"
         params.append(max_price)
     if item_condition and item_condition.strip():
-        query += " AND i.item_condition = %s"
+        query += " AND i.condition_id = (SELECT condition_id FROM conditions WHERE condition_name = %s)"
         params.append(item_condition)
     if search_query and search_query.strip():
         query += " AND (i.title LIKE %s OR i.description LIKE %s)"
@@ -353,8 +360,8 @@ def post_item():
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                INSERT INTO items (title, description, price, category_id, seller_id, item_condition, quantity) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO items (title, description, price, category_id, seller_id, condition_id, quantity) 
+                VALUES (%s, %s, %s, %s, %s, (SELECT condition_id FROM conditions WHERE condition_name = %s), %s)
             """, (title, description, price, category_id, session['user_id'], item_condition, quantity))
             conn.commit()
             flash("Item listed! Smart alerts have been sent to interested buyers.", "success")
@@ -383,8 +390,8 @@ def interests():
         item_condition = request.form.get('condition') or None
         
         cursor.execute("""
-            INSERT INTO interests (user_id, category_id, min_price, max_price, keyword, item_condition) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO interests (user_id, category_id, min_price, max_price, keyword, condition_id) 
+            VALUES (%s, %s, %s, %s, %s, (SELECT condition_id FROM conditions WHERE condition_name = %s))
         """, (session['user_id'], category_id, min_price, max_price, keyword, item_condition))
         conn.commit()
         flash("Interest registered! We will notify you when matching items appear.", "success")
@@ -477,9 +484,9 @@ def admin_dashboard():
     cursor = conn.cursor(dictionary=True)
     
     # Get Stats
-    cursor.execute("SELECT COUNT(*) as count FROM users WHERE role='buyer'")
+    cursor.execute("SELECT COUNT(*) as count FROM users u JOIN roles r ON u.role_id=r.role_id WHERE r.role_name='buyer'")
     buyer_count = cursor.fetchone()['count']
-    cursor.execute("SELECT COUNT(*) as count FROM users WHERE role='seller'")
+    cursor.execute("SELECT COUNT(*) as count FROM users u JOIN roles r ON u.role_id=r.role_id WHERE r.role_name='seller'")
     seller_count = cursor.fetchone()['count']
     cursor.execute("SELECT COUNT(*) as count FROM items")
     item_count = cursor.fetchone()['count']
@@ -487,7 +494,7 @@ def admin_dashboard():
     cat_count = cursor.fetchone()['count']
     
     # Recent users
-    cursor.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 5")
+    cursor.execute("SELECT u.*, r.role_name as role FROM users u JOIN roles r ON u.role_id=r.role_id ORDER BY created_at DESC LIMIT 5")
     recent_users = cursor.fetchall()
     
     cursor.close()
@@ -502,7 +509,12 @@ def admin_dashboard():
 def admin_users():
     conn = db.get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users ORDER BY created_at DESC")
+    cursor.execute("""
+        SELECT u.*, r.role_name as role 
+        FROM users u 
+        JOIN roles r ON u.role_id=r.role_id 
+        ORDER BY created_at DESC
+    """)
     users = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -626,9 +638,17 @@ def buy_item(item_id):
         total_price = item['price'] * qty
         # Create Order
         cursor.execute("""
-            INSERT INTO orders (item_id, buyer_id, seller_id, quantity, total_price, notes) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (item_id, session['user_id'], item['seller_id'], qty, total_price, notes))
+            INSERT INTO orders (buyer_id, total_price, status_id, notes) 
+            VALUES (%s, %s, (SELECT status_id FROM order_status WHERE status_name = 'pending'), %s)
+        """, (session['user_id'], total_price, notes))
+        
+        order_id = cursor.lastrowid
+        
+        # Create Order Item (Cart)
+        cursor.execute("""
+            INSERT INTO order_items (order_id, item_id, seller_id, quantity, price_at_purchase)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (order_id, item_id, item['seller_id'], qty, item['price']))
         
         # Decrement Item stock
         cursor.execute("UPDATE items SET quantity = quantity - %s WHERE item_id = %s", (qty, item_id))
@@ -653,20 +673,24 @@ def orders():
     
     if session['role'] == 'buyer':
         cursor.execute("""
-            SELECT o.*, i.title, u.name as seller_name 
+            SELECT o.*, oi.*, i.title, u.name as seller_name, s.status_name as status 
             FROM orders o 
-            JOIN items i ON o.item_id = i.item_id 
-            JOIN users u ON o.seller_id = u.user_id 
+            JOIN order_items oi ON o.order_id = oi.order_id
+            JOIN items i ON oi.item_id = i.item_id 
+            JOIN users u ON oi.seller_id = u.user_id 
+            JOIN order_status s ON o.status_id = s.status_id
             WHERE o.buyer_id = %s 
             ORDER BY o.order_date DESC
         """, (session['user_id'],))
     else:
         cursor.execute("""
-            SELECT o.*, i.title, u.name as buyer_name 
+            SELECT o.*, oi.*, i.title, u.name as buyer_name, s.status_name as status 
             FROM orders o 
-            JOIN items i ON o.item_id = i.item_id 
+            JOIN order_items oi ON o.order_id = oi.order_id
+            JOIN items i ON oi.item_id = i.item_id 
             JOIN users u ON o.buyer_id = u.user_id 
-            WHERE o.seller_id = %s 
+            JOIN order_status s ON o.status_id = s.status_id
+            WHERE oi.seller_id = %s 
             ORDER BY o.order_date DESC
         """, (session['user_id'],))
         
@@ -693,10 +717,11 @@ def wishlist():
             flash("Already in your wishlist.", "info")
             
     cursor.execute("""
-        SELECT w.*, i.title, i.price, i.item_condition, c.name as category_name 
+        SELECT w.*, i.title, i.price, cond.condition_name as item_condition, c.name as category_name 
         FROM wishlist w 
         JOIN items i ON w.item_id = i.item_id 
         JOIN categories c ON i.category_id = c.category_id 
+        JOIN conditions cond ON i.condition_id = cond.condition_id
         WHERE w.user_id = %s
     """, (session['user_id'],))
     items = cursor.fetchall()
