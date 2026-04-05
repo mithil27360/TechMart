@@ -1,77 +1,93 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Password toggle
+  // password show/hide toggle
   const toggle = document.getElementById('togglePassword');
   const pwInput = document.getElementById('password');
   
-  const eyeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  const eyeOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`;
+  // svg icons for eye open/closed
+  const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeClosed = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`;
 
   if (toggle && pwInput) {
-    // Set initial icon
-    toggle.innerHTML = eyeOffIcon;
-    
+    toggle.innerHTML = eyeClosed;
     toggle.addEventListener('click', () => {
-      const isPassword = pwInput.type === 'password';
-      pwInput.type = isPassword ? 'text' : 'password';
-      toggle.innerHTML = isPassword ? eyeIcon : eyeOffIcon;
+      const showing = pwInput.type === 'password';
+      pwInput.type = showing ? 'text' : 'password';
+      toggle.innerHTML = showing ? eyeOpen : eyeClosed;
     });
   }
 
-  // Search Suggestions
-  const searchInput = document.getElementById('navSearchInput');
-  const suggestionsBox = document.getElementById('searchSuggestions');
+  // live search suggestions
+  const searchBox = document.getElementById('navSearchInput');
+  const dropdown = document.getElementById('searchSuggestions');
 
-  if (searchInput && suggestionsBox) {
+  if (searchBox && dropdown) {
     const spinner = document.getElementById('searchSpinner');
-    searchInput.addEventListener('input', async (e) => {
+    
+    searchBox.addEventListener('input', async (e) => {
       const q = e.target.value.trim();
+      
+      // dont search for super short queries
       if (q.length < 2) {
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.classList.remove('show');
+        dropdown.innerHTML = '';
+        dropdown.classList.remove('show');
         if (spinner) spinner.classList.remove('active');
         return;
       }
 
       if (spinner) spinner.classList.add('active');
+      
       try {
         const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`);
-        const suggestions = await res.json();
+        const data = await res.json();
         
         if (spinner) spinner.classList.remove('active');
-        if (suggestions.length > 0) {
-          suggestionsBox.innerHTML = suggestions.map(s => `
-            <a href="/browse?q=${encodeURIComponent(s.title)}" class="suggestion-item">
-              <div style="display:flex; align-items:center; gap:8px;">
-                ${s.primary_image ? `<img src="/static/uploads/${s.primary_image}" style="width:24px;height:24px;border-radius:4px;object-fit:cover;">` : `<span style="display:inline-block;width:24px;height:24px;border-radius:4px;background:var(--grey-100);text-align:center;line-height:24px;font-size:0.7rem;">📦</span>`}
-                <span class="s-title">${s.title}</span>
-              </div>
-              <span class="s-price">₹${s.price.toLocaleString()}</span>
-            </a>
-          `).join('');
-          suggestionsBox.classList.add('show');
+        
+        if (data.length > 0) {
+          // build suggestion html
+          let html = '';
+          for (let s of data) {
+            let imgHtml = '';
+            if (s.primary_image) {
+              imgHtml = `<img src="/static/uploads/${s.primary_image}" style="width:24px;height:24px;border-radius:4px;object-fit:cover;">`;
+            } else {
+              imgHtml = `<span style="display:inline-block;width:24px;height:24px;border-radius:4px;background:var(--grey-100);text-align:center;line-height:24px;font-size:0.7rem;">📦</span>`;
+            }
+            
+            html += `
+              <a href="/browse?q=${encodeURIComponent(s.title)}" class="suggestion-item">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  ${imgHtml}
+                  <span class="s-title">${s.title}</span>
+                </div>
+                <span class="s-price">₹${s.price.toLocaleString()}</span>
+              </a>
+            `;
+          }
+          dropdown.innerHTML = html;
+          dropdown.classList.add('show');
         } else {
-          suggestionsBox.innerHTML = '';
-          suggestionsBox.classList.remove('show');
+          dropdown.innerHTML = '';
+          dropdown.classList.remove('show');
         }
       } catch (err) {
-        console.error('Suggestions error:', err);
+        console.log('search error:', err);
       }
     });
 
-    // Close suggestions on blur / click outside
+    // close dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-        suggestionsBox.classList.remove('show');
+      if (!searchBox.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('show');
       }
     });
   }
 
-  // Registration Role Cards Interactive Logic
-  const roleRadios = document.querySelectorAll('input[name="role"]');
-  if (roleRadios.length > 0) {
-    const updateRoleUI = () => {
-      roleRadios.forEach(radio => {
+  // role card selection on register page
+  const roleInputs = document.querySelectorAll('input[name="role"]');
+  if (roleInputs.length > 0) {
+    function updateCards() {
+      roleInputs.forEach(radio => {
         const card = radio.nextElementSibling;
         if (radio.checked) {
           card.style.borderColor = 'var(--blue)';
@@ -85,33 +101,35 @@ document.addEventListener('DOMContentLoaded', () => {
           card.style.boxShadow = 'none';
         }
       });
-    };
-    roleRadios.forEach(r => r.addEventListener('change', updateRoleUI));
-    updateRoleUI(); // Initial run
+    }
+    roleInputs.forEach(r => r.addEventListener('change', updateCards));
+    updateCards();
   }
 
-  // Auto-dismiss flash messages after 4s
-  const flashWrap = document.getElementById('flashWrap');
-  if (flashWrap) {
+  // auto dismiss flash messages
+  const flashMsg = document.getElementById('flashWrap');
+  if (flashMsg) {
     setTimeout(() => {
-      flashWrap.style.transition = 'opacity 0.5s ease';
-      flashWrap.style.opacity = '0';
-      setTimeout(() => flashWrap.remove(), 500);
+      flashMsg.style.transition = 'opacity 0.5s ease';
+      flashMsg.style.opacity = '0';
+      setTimeout(() => flashMsg.remove(), 500);
     }, 4000);
   }
 
 });
 
+// mark notification as read
 async function markAsRead(notifId) {
   const card = document.getElementById('notif-' + notifId);
   if (!card || card.classList.contains('read')) return;
 
   try {
-    // Standardized to POST to match app.py
     const res = await fetch('/notifications/read/' + notifId, { method: 'POST' });
     if (res.ok) {
       card.classList.remove('unread');
       card.classList.add('read');
+      
+      // update the badge text
       const badge = card.querySelector('.notif-badge');
       if (badge) {
         badge.textContent = 'READ';
@@ -119,24 +137,24 @@ async function markAsRead(notifId) {
         badge.classList.add('read');
       }
       
-      // Update sidebar badge
-      const sidebarBadge = document.querySelector('.nav-item span.badge');
-      if (sidebarBadge) {
-        const currentCount = parseInt(sidebarBadge.textContent);
-        if (currentCount <= 1) {
-          sidebarBadge.remove();
+      // update sidebar count
+      const countBadge = document.querySelector('.nav-item span.badge');
+      if (countBadge) {
+        const num = parseInt(countBadge.textContent);
+        if (num <= 1) {
+          countBadge.remove();
         } else {
-          sidebarBadge.textContent = currentCount - 1;
+          countBadge.textContent = num - 1;
         }
       }
     }
   } catch (e) {
-    console.error('Mark as read failed:', e);
+    console.log('couldnt mark as read:', e);
   }
 }
 
+// toast popup when user shows interest
 function simulatePurchase(itemTitle) {
-  // Create a toast notification
   const toast = document.createElement('div');
   toast.className = 'purchase-toast';
   toast.innerHTML = `
@@ -144,13 +162,13 @@ function simulatePurchase(itemTitle) {
       <span class="toast-icon">✨</span>
       <div class="toast-text">
         <strong>Interested!</strong>
-        <p>Your interest in ${itemTitle} has been recorded. The seller will be notified.</p>
+        <p>Your interest in ${itemTitle} has been noted.</p>
       </div>
     </div>
   `;
   document.body.appendChild(toast);
 
-  // Animate toast
+  // show and then hide after a few seconds
   setTimeout(() => toast.classList.add('show'), 10);
   setTimeout(() => {
     toast.classList.remove('show');
