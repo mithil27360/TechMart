@@ -216,7 +216,7 @@ def logout():
 
 @app.route('/browse', methods=['GET', 'POST'])
 def browse():
-    if 'user_id' not in session or session['role'] not in ['buyer', 'admin']:
+    if 'user_id' not in session:
         return redirect(url_for('login'))
         
     category_id = request.values.get('category_id')
