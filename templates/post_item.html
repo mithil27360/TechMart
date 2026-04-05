@@ -8,7 +8,7 @@
   <p class="page-sub">Describe your product and reach matching buyers instantly via automated alerts.</p>
 
   <div class="card-box">
-    <form method="POST" action="{{ url_for('post_item') }}">
+    <form method="POST" action="{{ url_for('post_item') }}" enctype="multipart/form-data">
       <div class="form-row">
         <div class="form-group">
           <label for="title">Product Title</label>
@@ -50,10 +50,62 @@
         <label for="description">Description</label>
         <textarea id="description" name="description" required placeholder="Condition, age, key specs…"></textarea>
       </div>
+
+      <!-- Image Upload Section -->
+      <div class="form-group">
+        <label>Product Photos <span style="font-weight:400; color:#6e6e73;">(up to 5 images, optional)</span></label>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="images" name="images" accept="image/*" multiple style="display:none;">
+          <div class="upload-prompt" id="uploadPrompt">
+            <div class="upload-icon">📷</div>
+            <p>Drag & drop photos here or <span class="upload-link" onclick="document.getElementById('images').click()">browse</span></p>
+            <p class="upload-hint">JPG, PNG, WebP — max 5 MB each</p>
+          </div>
+          <div class="img-preview-grid" id="previewGrid"></div>
+        </div>
+      </div>
+
       <button type="submit" class="submit-btn">List Item</button>
     </form>
   </div>
 
   <p class="info-note">Buyers with matching interests will be auto-notified the moment your item is posted — no extra steps needed.</p>
 </div>
+
+<script>
+const input = document.getElementById('images');
+const zone  = document.getElementById('uploadZone');
+const grid  = document.getElementById('previewGrid');
+const prompt = document.getElementById('uploadPrompt');
+
+function showPreviews(files) {
+  grid.innerHTML = '';
+  const arr = Array.from(files).slice(0, 5);
+  if (arr.length > 0) prompt.style.display = 'none';
+  arr.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wrap = document.createElement('div');
+      wrap.className = 'preview-thumb';
+      wrap.innerHTML = `
+        <img src="${e.target.result}" alt="preview">
+        ${idx === 0 ? '<span class="primary-badge">Primary</span>' : ''}
+      `;
+      grid.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+input.addEventListener('change', () => showPreviews(input.files));
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  input.files = e.dataTransfer.files;
+  showPreviews(e.dataTransfer.files);
+});
+</script>
 {% endblock %}

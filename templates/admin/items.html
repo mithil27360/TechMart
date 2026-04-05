@@ -22,7 +22,14 @@
       <tbody>
         {% for item in items %}
         <tr>
-          <td class="td-bold">{{ item.title }}</td>
+          <td>
+            {% if item.primary_image %}
+            <img src="{{ url_for('static', filename='uploads/' + item.primary_image) }}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px;">
+            {% else %}
+            <span style="display:inline-block;width:44px;height:44px;border-radius:8px;background:var(--grey-100);text-align:center;line-height:44px;margin-right:8px;">📦</span>
+            {% endif %}
+            <strong>{{ item.title }}</strong>
+          </td>
           <td><span class="cat-chip">{{ item.category_name }}</span></td>
           <td class="td-price">₹{{ "{:,.0f}".format(item.price) }}</td>
           <td>{{ item.seller_name }}</td>

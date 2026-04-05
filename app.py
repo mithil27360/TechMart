@@ -1,10 +1,12 @@
 import os
+import uuid
 import random
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
 from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 import db
 import mysql.connector
 from dotenv import load_dotenv
@@ -13,9 +15,17 @@ load_dotenv()
 db.init_db()  # Auto-initialize database on startup (for Render Free Tier)
 
 app = Flask(__name__)
-# Render/Heroku use proxies, this ensures https is detected correctly
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "techmart_secret_key")
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+MAX_IMAGES = 5
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024  # 25 MB max total upload
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- Mail Config ---
 
@@ -301,13 +311,16 @@ def browse():
         cursor_log.close()
         conn_log.close()
 
-    # 2. Build Query
-    # Professional Fix: Ensure we match against the hierarchy correctly and items are visible
+    # 2. Build Query — Left join primary image
     query = """
-        SELECT i.*, c.name as category_name, u.name as seller_name 
+        SELECT i.*, c.name as category_name, u.name as seller_name,
+               img.image_url as primary_image,
+               cond.condition_name as item_condition
         FROM items i 
         JOIN categories c ON i.category_id = c.category_id 
         JOIN users u ON i.seller_id = u.user_id 
+        JOIN conditions cond ON i.condition_id = cond.condition_id
+        LEFT JOIN items_img img ON img.item_id = i.item_id AND img.is_primary = TRUE
         WHERE i.quantity > 0
     """
     params = []
@@ -354,6 +367,7 @@ def post_item():
         category_id = request.form.get('category_id')
         item_condition = request.form.get('condition')
         quantity = request.form.get('quantity')
+        uploaded_files = request.files.getlist('images')
         
         conn = db.get_connection()
         if not conn: return "DB Error"
@@ -363,6 +377,19 @@ def post_item():
                 INSERT INTO items (title, description, price, category_id, seller_id, condition_id, quantity) 
                 VALUES (%s, %s, %s, %s, %s, (SELECT condition_id FROM conditions WHERE condition_name = %s), %s)
             """, (title, description, price, category_id, session['user_id'], item_condition, quantity))
+            conn.commit()
+            item_id = cursor.lastrowid
+            
+            # Save uploaded images
+            valid_images = [f for f in uploaded_files if f and f.filename and allowed_file(f.filename)]
+            for idx, file in enumerate(valid_images[:MAX_IMAGES]):
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                unique_name = f"{uuid.uuid4().hex}.{ext}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_name))
+                cursor.execute("""
+                    INSERT INTO items_img (item_id, image_url, display_order, is_primary)
+                    VALUES (%s, %s, %s, %s)
+                """, (item_id, unique_name, idx, idx == 0))
             conn.commit()
             flash("Item listed! Smart alerts have been sent to interested buyers.", "success")
         except mysql.connector.Error as err:
@@ -541,10 +568,12 @@ def admin_items():
     conn = db.get_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT i.*, c.name as category_name, u.name as seller_name 
+        SELECT i.*, c.name as category_name, u.name as seller_name,
+               img.image_url as primary_image
         FROM items i 
         JOIN categories c ON i.category_id = c.category_id 
         JOIN users u ON i.seller_id = u.user_id 
+        LEFT JOIN items_img img ON img.item_id = i.item_id AND img.is_primary = TRUE
         ORDER BY i.created_at DESC
     """)
     items = cursor.fetchall()
