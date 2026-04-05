@@ -1,10 +1,8 @@
 import os
 import uuid
-import random
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
-from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 import db
@@ -27,17 +25,6 @@ app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024  # 25 MB max total upload
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# --- Mail Config ---
-
-app.config.update(
-    MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp.gmail.com"),
-    MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
-    MAIL_USE_TLS=os.getenv("MAIL_USE_TLS", "True") == "True",
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER")
-)
-mail = Mail(app)
 
 # --- Helper functions ---
 
@@ -49,35 +36,6 @@ def admin_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
-
-def verified_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' in session and not session.get('is_verified', False):
-            flash("Please verify your email to continue.", "info")
-            return redirect(url_for('verify_otp'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def send_otp_email(email, user_id):
-    otp = str(random.randint(100000, 999999))
-    expiry = datetime.now() + timedelta(minutes=10)
-    
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET otp_token = %s, otp_expiry = %s WHERE user_id = %s", (otp, expiry, user_id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    
-    msg = Message("Your TechMart Verification Code", recipients=[email])
-    msg.body = f"Your verification code is: {otp}. It expires in 10 minutes."
-    try:
-        mail.send(msg)
-        return True
-    except Exception as e:
-        print(f"Mail error: {e}")
-        return False
 
 def get_categories():
     conn = db.get_connection()
@@ -187,10 +145,11 @@ def register():
                 return redirect(url_for('register'))
             role_id = role_row['role_id']
             
-            cursor.execute("INSERT INTO users (name, email, password, role_id) VALUES (%s, %s, %s, %s)", 
+            # Auto-verify: no OTP needed
+            cursor.execute("INSERT INTO users (name, email, password, role_id, is_verified) VALUES (%s, %s, %s, %s, TRUE)", 
                            (name, email, password, role_id))
             conn.commit()
-            flash("Registration successful! Please login.", "success")
+            flash("Account created! You can now log in.", "success")
             return redirect(url_for('login'))
         except mysql.connector.Error as err:
             flash(f"Error: {err.msg}", "error")
@@ -224,19 +183,14 @@ def login():
         conn.close()
         
         if user:
-            if not user['is_verified']:
-                session['user_id'] = user['user_id']
-                session['email'] = user['email']
-                send_otp_email(user['email'], user['user_id'])
-                return redirect(url_for('verify_otp'))
-                
             session['user_id'] = user['user_id']
             session['name'] = user['name']
             session['role'] = user['role']
-            session['is_verified'] = True
             flash(f"Welcome back, {user['name']}!", "success")
             if user['role'] == 'buyer':
                 return redirect(url_for('browse'))
+            elif user['role'] == 'admin':
+                return redirect(url_for('admin_dashboard'))
             else:
                 return redirect(url_for('post_item'))
         else:
@@ -253,34 +207,6 @@ def about():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
-
-@app.route('/verify-otp', methods=['GET', 'POST'])
-def verify_otp():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    if session.get('is_verified'): return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        otp = request.form.get('otp')
-        conn = db.get_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE user_id = %s", (session['user_id'],))
-        user = cursor.fetchone()
-        
-        if user and user['otp_token'] == otp and user['otp_expiry'] > datetime.now():
-            cursor.execute("UPDATE users SET is_verified = True, otp_token = NULL WHERE user_id = %s", (session['user_id'],))
-            conn.commit()
-            session['is_verified'] = True
-            session['name'] = user['name']
-            session['role'] = user['role']
-            flash("Email verified successfully!", "success")
-            return redirect(url_for('browse') if user['role'] == 'buyer' else url_for('post_item'))
-        else:
-            flash("Invalid or expired OTP.", "error")
-            
-        cursor.close()
-        conn.close()
-        
-    return render_template('verify_otp.html')
 
 @app.route('/logout')
 def logout():

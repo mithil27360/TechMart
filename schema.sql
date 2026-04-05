@@ -41,16 +41,13 @@ INSERT INTO conditions (condition_name) VALUES ('new'), ('used'), ('refurbished'
 
 -- 3. CORE ENTITIES
 CREATE TABLE users (
-    user_id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role_id INT NOT NULL,
-    google_id VARCHAR(255) UNIQUE,
-    is_verified BOOLEAN DEFAULT FALSE,
-    otp_token VARCHAR(6),
-    otp_expiry TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id      INT PRIMARY KEY AUTO_INCREMENT,
+    name         VARCHAR(100) NOT NULL,
+    email        VARCHAR(100) UNIQUE NOT NULL,
+    password     VARCHAR(255) NOT NULL,
+    role_id      INT NOT NULL,
+    is_verified  BOOLEAN DEFAULT TRUE,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(role_id)
 );
 
