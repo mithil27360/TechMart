@@ -2,31 +2,73 @@
 {% block title %}My Listings{% endblock %}
 
 {% block content %}
-<div class="inner-page">
+<div class="inner-page" style="max-width:1100px;">
   <p class="page-eyebrow">Seller</p>
   <h1 class="page-title">My Listings</h1>
-  <p class="page-sub">All items you have listed on TechMart.</p>
+  <p class="page-sub">All products you have listed on TechMart — with live stock and order counts.</p>
+
+  <!-- Summary cards -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:40px;">
+    <div class="stat-card">
+      <span class="stat-label">Total Listed</span>
+      <p class="stat-value text-blue">{{ items | length }}</p>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">In Stock</span>
+      <p class="stat-value text-green">{{ items | selectattr('quantity', 'gt', 0) | list | length }}</p>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Out of Stock</span>
+      <p class="stat-value" style="color:var(--red);">{{ items | selectattr('quantity', 'equalto', 0) | list | length }}</p>
+    </div>
+  </div>
 
   <div class="table-wrap">
     <table class="styled-table">
       <thead>
         <tr>
-          <th>Title</th>
+          <th>Product</th>
           <th>Category</th>
+          <th>Condition</th>
           <th>Price</th>
-          <th>Posted</th>
+          <th>Stock</th>
+          <th>Orders</th>
+          <th>Listed</th>
         </tr>
       </thead>
       <tbody>
         {% for item in items %}
         <tr>
-          <td class="td-bold">{{ item.title }}</td>
-          <td>{{ item.category_name }}</td>
+          <td>
+            {% if item.primary_image %}
+            <img src="{{ url_for('static', filename='uploads/' + item.primary_image) }}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:10px;">
+            {% else %}
+            <span style="display:inline-block;width:40px;height:40px;border-radius:8px;background:var(--grey-100);text-align:center;line-height:40px;margin-right:10px;">📦</span>
+            {% endif %}
+            <strong>{{ item.title }}</strong>
+          </td>
+          <td><span class="cat-chip">{{ item.category_name }}</span></td>
+          <td>
+            <span class="cat-chip" style="background:var(--blue-50);color:var(--blue);">
+              {{ item.condition_name | capitalize }}
+            </span>
+          </td>
           <td class="td-price">₹{{ "{:,.0f}".format(item.price) }}</td>
-          <td style="color:#6e6e73;">{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <span class="stock-badge {{ 'out-of-stock' if item.quantity == 0 else ('low-stock' if item.quantity < 3 else 'in-stock') }}">
+              {{ item.quantity }} left
+            </span>
+          </td>
+          <td>
+            <span style="font-weight:600;">{{ item.order_count }}</span>
+            <span style="color:var(--grey-400);font-size:0.8rem;"> sold</span>
+          </td>
+          <td style="color:var(--grey-400);">{{ item.created_at.strftime('%b %d, %Y') }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" style="text-align:center;color:#6e6e73;padding:36px;">You haven't listed anything yet.</td></tr>
+        <tr><td colspan="7" style="text-align:center;color:var(--grey-400);padding:48px;">
+          You haven't listed anything yet. <a href="{{ url_for('post_item') }}" style="color:var(--blue);">Post your first item →</a>
+        </td></tr>
         {% endfor %}
       </tbody>
     </table>

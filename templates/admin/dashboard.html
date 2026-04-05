@@ -2,11 +2,12 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="inner-page">
+<div class="inner-page" style="max-width:1200px;">
   <p class="page-eyebrow">Administration</p>
   <h1 class="page-title">Marketplace Overview</h1>
-  <p class="page-sub">Real-time metrics and system health monitoring.</p>
+  <p class="page-sub">Live platform metrics and recent activity.</p>
 
+  <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card">
       <span class="stat-label">Total Buyers</span>
@@ -17,42 +18,118 @@
       <p class="stat-value text-green">{{ stats.sellers }}</p>
     </div>
     <div class="stat-card">
-      <span class="stat-label">Active Items</span>
+      <span class="stat-label">Active Listings</span>
       <p class="stat-value">{{ stats.total_items }}</p>
     </div>
     <div class="stat-card">
-      <span class="stat-label">Categories</span>
-      <p class="stat-value text-grey">{{ stats.cats }}</p>
+      <span class="stat-label">Total Orders</span>
+      <p class="stat-value" style="color:#9b59b6;">{{ stats.total_orders }}</p>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Pending Orders</span>
+      <p class="stat-value" style="color:#ff9800;">{{ stats.pending_orders }}</p>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Platform Revenue</span>
+      <p class="stat-value text-green" style="font-size:1.5rem;">₹{{ "{:,.0f}".format(stats.total_revenue) }}</p>
     </div>
   </div>
 
-  <div class="admin-section" style="margin-top: 48px;">
-    <h2 class="section-title">Recent Registrations</h2>
+  <!-- Two Column Layout -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:48px;">
+
+    <!-- Recent Orders -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 class="section-title" style="margin:0;">Recent Orders</h2>
+        <a href="{{ url_for('admin_orders') }}" style="font-size:0.8rem;color:var(--blue);">View all →</a>
+      </div>
+      <div class="table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr><th>Order</th><th>Item</th><th>Buyer</th><th>Total</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for o in recent_orders %}
+            <tr>
+              <td class="td-bold">#OC-{{ o.order_id }}</td>
+              <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ o.title }}</td>
+              <td>{{ o.buyer_name }}</td>
+              <td class="td-price">₹{{ "{:,.0f}".format(o.total_price) }}</td>
+              <td><span class="status-badge {{ o.status }}">{{ o.status | upper }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--grey-400);">No orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Registrations -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 class="section-title" style="margin:0;">Recent Registrations</h2>
+        <a href="{{ url_for('admin_users') }}" style="font-size:0.8rem;color:var(--blue);">View all →</a>
+      </div>
+      <div class="table-wrap">
+        <table class="styled-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+          </thead>
+          <tbody>
+            {% for user in recent_users %}
+            <tr>
+              <td class="td-bold">{{ user.name }}</td>
+              <td style="font-size:0.8rem;color:var(--grey-400);">{{ user.email }}</td>
+              <td><span class="cat-chip" style="color:var(--black);background:var(--grey-100);">{{ user.role | upper }}</span></td>
+              <td style="color:var(--grey-400);">{{ user.created_at.strftime('%b %d') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Top Selling Items -->
+  <div class="admin-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 class="section-title" style="margin:0;">Top Selling Items</h2>
+      <a href="{{ url_for('admin_items') }}" style="font-size:0.8rem;color:var(--blue);">Manage all →</a>
+    </div>
     <div class="table-wrap">
       <table class="styled-table">
         <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Joined</th>
-          </tr>
+          <tr><th>Product</th><th>Seller</th><th>Price</th><th>Stock Left</th><th>Units Sold</th><th>Revenue</th></tr>
         </thead>
         <tbody>
-          {% for user in recent_users %}
+          {% for item in top_items %}
           <tr>
-            <td class="td-bold">{{ user.name }}</td>
-            <td>{{ user.email }}</td>
-            <td><span class="cat-chip" style="color:var(--black);background:var(--grey-100);">{{ user.role | upper }}</span></td>
-            <td>{{ user.created_at.strftime('%b %d, %Y') }}</td>
+            <td>
+              {% if item.primary_image %}
+              <img src="{{ url_for('static', filename='uploads/' + item.primary_image) }}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:8px;">
+              {% endif %}
+              <strong>{{ item.title }}</strong>
+            </td>
+            <td>{{ item.seller_name }}</td>
+            <td class="td-price">₹{{ "{:,.0f}".format(item.price) }}</td>
+            <td>
+              <span class="stock-badge {{ 'out-of-stock' if item.quantity == 0 else ('low-stock' if item.quantity < 3 else 'in-stock') }}">
+                {{ item.quantity }}
+              </span>
+            </td>
+            <td><strong>{{ item.units_sold }}</strong></td>
+            <td class="td-price">₹{{ "{:,.0f}".format(item.revenue) }}</td>
           </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--grey-400);">No sales yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    <div style="margin-top: 20px; text-align: right;">
-      <a href="{{ url_for('admin_users') }}" class="text-link">View all users →</a>
-    </div>
   </div>
+
 </div>
 {% endblock %}

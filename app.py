@@ -415,16 +415,21 @@ def listings():
     if not conn: return "DB Error"
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT i.*, c.name as category_name 
-        FROM items i 
-        JOIN categories c ON i.category_id = c.category_id 
-        WHERE i.seller_id = %s 
+        SELECT i.*, c.name as category_name, cond.condition_name,
+               img.image_url as primary_image,
+               COALESCE(SUM(oi.quantity), 0) as order_count
+        FROM items i
+        JOIN categories c ON i.category_id = c.category_id
+        JOIN conditions cond ON i.condition_id = cond.condition_id
+        LEFT JOIN items_img img ON img.item_id = i.item_id AND img.is_primary = TRUE
+        LEFT JOIN order_items oi ON oi.item_id = i.item_id
+        WHERE i.seller_id = %s
+        GROUP BY i.item_id, c.name, cond.condition_name, img.image_url
         ORDER BY i.created_at DESC
     """, (session['user_id'],))
     user_items = cursor.fetchall()
     cursor.close()
     conn.close()
-    
     return render_template('my_listings.html', items=user_items)
 
 # --- Admin Routes ---
@@ -436,26 +441,66 @@ def admin_dashboard():
     if not conn: return "DB Error"
     cursor = conn.cursor(dictionary=True)
     
-    # Get Stats
+    # Stats
     cursor.execute("SELECT COUNT(*) as count FROM users u JOIN roles r ON u.role_id=r.role_id WHERE r.role_name='buyer'")
     buyer_count = cursor.fetchone()['count']
     cursor.execute("SELECT COUNT(*) as count FROM users u JOIN roles r ON u.role_id=r.role_id WHERE r.role_name='seller'")
     seller_count = cursor.fetchone()['count']
     cursor.execute("SELECT COUNT(*) as count FROM items")
     item_count = cursor.fetchone()['count']
-    cursor.execute("SELECT COUNT(*) as count FROM categories")
-    cat_count = cursor.fetchone()['count']
+    cursor.execute("SELECT COUNT(*) as count FROM orders")
+    order_count = cursor.fetchone()['count']
+    cursor.execute("SELECT COUNT(*) as count FROM orders WHERE status_id = (SELECT status_id FROM order_status WHERE status_name='pending')")
+    pending_count = cursor.fetchone()['count']
+    cursor.execute("SELECT COALESCE(SUM(total_price), 0) as revenue FROM orders")
+    total_revenue = cursor.fetchone()['revenue']
     
     # Recent users
     cursor.execute("SELECT u.*, r.role_name as role FROM users u JOIN roles r ON u.role_id=r.role_id ORDER BY created_at DESC LIMIT 5")
     recent_users = cursor.fetchall()
     
+    # Recent orders
+    cursor.execute("""
+        SELECT o.order_id, o.total_price, o.order_date, s.status_name as status,
+               i.title, b.name as buyer_name
+        FROM orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN items i ON oi.item_id = i.item_id
+        JOIN users b ON o.buyer_id = b.user_id
+        JOIN order_status s ON o.status_id = s.status_id
+        ORDER BY o.order_date DESC LIMIT 5
+    """)
+    recent_orders = cursor.fetchall()
+    
+    # Top selling items
+    cursor.execute("""
+        SELECT i.item_id, i.title, i.price, i.quantity, u.name as seller_name,
+               COALESCE(SUM(oi.quantity), 0) as units_sold,
+               COALESCE(SUM(oi.quantity * oi.price_at_purchase), 0) as revenue,
+               img.image_url as primary_image
+        FROM items i
+        JOIN users u ON i.seller_id = u.user_id
+        LEFT JOIN order_items oi ON oi.item_id = i.item_id
+        LEFT JOIN items_img img ON img.item_id = i.item_id AND img.is_primary = TRUE
+        GROUP BY i.item_id, i.title, i.price, i.quantity, u.name, img.image_url
+        ORDER BY units_sold DESC
+        LIMIT 8
+    """)
+    top_items = cursor.fetchall()
+    
     cursor.close()
     conn.close()
     
-    return render_template('admin/dashboard.html', 
-                          stats={'buyers': buyer_count, 'sellers': seller_count, 'total_items': item_count, 'cats': cat_count},
-                          recent_users=recent_users)
+    return render_template('admin/dashboard.html',
+        stats={
+            'buyers': buyer_count, 'sellers': seller_count,
+            'total_items': item_count, 'total_orders': order_count,
+            'pending_orders': pending_count, 'total_revenue': total_revenue
+        },
+        recent_users=recent_users,
+        recent_orders=recent_orders,
+        top_items=top_items
+    )
 
 @app.route('/admin/users')
 @admin_required
@@ -628,29 +673,34 @@ def orders():
     
     if session['role'] == 'buyer':
         cursor.execute("""
-            SELECT o.*, oi.*, i.title, u.name as seller_name, s.status_name as status 
+            SELECT o.*, oi.quantity, oi.price_at_purchase, i.title, 
+                   u.name as seller_name, s.status_name as status,
+                   img.image_url as primary_image
             FROM orders o 
             JOIN order_items oi ON o.order_id = oi.order_id
             JOIN items i ON oi.item_id = i.item_id 
             JOIN users u ON oi.seller_id = u.user_id 
             JOIN order_status s ON o.status_id = s.status_id
+            LEFT JOIN items_img img ON img.item_id = oi.item_id AND img.is_primary = TRUE
             WHERE o.buyer_id = %s 
             ORDER BY o.order_date DESC
         """, (session['user_id'],))
     else:
         cursor.execute("""
-            SELECT o.*, oi.*, i.title, u.name as buyer_name, s.status_name as status 
+            SELECT o.*, oi.quantity, oi.price_at_purchase, i.title,
+                   u.name as buyer_name, s.status_name as status,
+                   img.image_url as primary_image
             FROM orders o 
             JOIN order_items oi ON o.order_id = oi.order_id
             JOIN items i ON oi.item_id = i.item_id 
             JOIN users u ON o.buyer_id = u.user_id 
             JOIN order_status s ON o.status_id = s.status_id
+            LEFT JOIN items_img img ON img.item_id = oi.item_id AND img.is_primary = TRUE
             WHERE oi.seller_id = %s 
             ORDER BY o.order_date DESC
         """, (session['user_id'],))
         
     user_orders = cursor.fetchall()
-    
     cursor.close()
     conn.close()
     return render_template('orders.html', orders=user_orders)
@@ -698,6 +748,54 @@ def remove_wish(wish_id):
     return redirect(url_for('wishlist'))
 
 # --- Server Start ---
+
+@app.route('/orders/<int:order_id>/status', methods=['POST'])
+def update_order_status(order_id):
+    if 'user_id' not in session or session['role'] != 'seller':
+        return redirect(url_for('login'))
+    new_status = request.form.get('status')
+    allowed = ['confirmed', 'completed', 'cancelled']
+    if new_status not in allowed:
+        flash("Invalid status.", "error")
+        return redirect(url_for('orders'))
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    # Only allow status update if this seller owns an item in the order
+    cursor.execute("""
+        UPDATE orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        SET o.status_id = (SELECT status_id FROM order_status WHERE status_name = %s)
+        WHERE o.order_id = %s AND oi.seller_id = %s
+    """, (new_status, order_id, session['user_id']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash(f"Order #{order_id} marked as {new_status}.", "success")
+    return redirect(url_for('orders'))
+
+@app.route('/admin/orders')
+@admin_required
+def admin_orders():
+    conn = db.get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT o.order_id, o.total_price, o.order_date, s.status_name as status,
+               oi.quantity, i.title,
+               b.name as buyer_name, sel.name as seller_name,
+               img.image_url as primary_image
+        FROM orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN items i ON oi.item_id = i.item_id
+        JOIN users b ON o.buyer_id = b.user_id
+        JOIN users sel ON oi.seller_id = sel.user_id
+        JOIN order_status s ON o.status_id = s.status_id
+        LEFT JOIN items_img img ON img.item_id = oi.item_id AND img.is_primary = TRUE
+        ORDER BY o.order_date DESC
+    """)
+    all_orders = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('admin/orders.html', orders=all_orders)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))

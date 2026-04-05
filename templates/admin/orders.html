@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}All Orders{% endblock %}
+
+{% block content %}
+<div class="inner-page" style="max-width:1200px;">
+  <p class="page-eyebrow">Administration</p>
+  <h1 class="page-title">All Orders</h1>
+  <p class="page-sub">Every transaction on the platform in real time.</p>
+
+  <div class="table-wrap">
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Item</th>
+          <th>Buyer</th>
+          <th>Seller</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td class="td-bold">#OC-{{ o.order_id }}</td>
+          <td>
+            {% if o.primary_image %}
+            <img src="{{ url_for('static', filename='uploads/' + o.primary_image) }}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:8px;">
+            {% endif %}
+            {{ o.title }}
+          </td>
+          <td>{{ o.buyer_name }}</td>
+          <td>{{ o.seller_name }}</td>
+          <td>{{ o.quantity }}</td>
+          <td class="td-price">₹{{ "{:,.0f}".format(o.total_price) }}</td>
+          <td><span class="status-badge {{ o.status }}">{{ o.status | upper }}</span></td>
+          <td style="color:var(--grey-400);">{{ o.order_date.strftime('%b %d, %Y') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;padding:48px;color:var(--grey-400);">No orders placed yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
