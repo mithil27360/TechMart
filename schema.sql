@@ -1,9 +1,12 @@
 -- 1. DROP EXISTING CONSTRUCTS FOR CLEAN INITIATION
+DROP PROCEDURE IF EXISTS generate_seller_report;
 DROP PROCEDURE IF EXISTS get_notifications;
 DROP PROCEDURE IF EXISTS mark_notification_read;
+DROP TRIGGER IF EXISTS prevent_self_purchase;
 DROP TRIGGER IF EXISTS notify_users_after_item;
 DROP TRIGGER IF EXISTS notify_seller_after_order;
 
+DROP TABLE IF EXISTS seller_performance;
 DROP TABLE IF EXISTS search_history;
 DROP TABLE IF EXISTS items_img;
 DROP TABLE IF EXISTS wishlist;
@@ -193,6 +196,32 @@ LEFT JOIN items i ON c.category_id = i.category_id
 LEFT JOIN order_items oi ON i.item_id = oi.item_id
 GROUP BY c.category_id, c.name;
 
+-- 7. POWER-UP: Analytical View (Price Intelligence)
+CREATE OR REPLACE VIEW category_price_intelligence AS
+SELECT 
+    i.item_id,
+    i.title,
+    i.price,
+    c.name as category_name,
+    (SELECT AVG(price) FROM items WHERE category_id = i.category_id) as category_avg_price,
+    CASE 
+        WHEN i.price > (SELECT AVG(price) * 1.5 FROM items WHERE category_id = i.category_id) THEN 'Overpriced'
+        WHEN i.price < (SELECT AVG(price) * 0.5 FROM items WHERE category_id = i.category_id) THEN 'Underpriced'
+        ELSE 'Fair Price'
+    END as price_status
+FROM items i
+JOIN categories c ON i.category_id = c.category_id;
+
+-- 8. POWER-UP: Analytical Table (Seller Performance)
+CREATE TABLE seller_performance (
+    seller_id INT PRIMARY KEY,
+    total_revenue DECIMAL(15,2) DEFAULT 0,
+    units_sold INT DEFAULT 0,
+    avg_item_price DECIMAL(10,2) DEFAULT 0,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seller_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 -- 7. PROCEDURES & FUNCTIONS
 DELIMITER $$
 
@@ -235,6 +264,51 @@ BEGIN
     RETURN avg_rating;
 END $$
 
+-- Procedure 3: POWER-UP Cursor Reporting (Seller Performance)
+CREATE PROCEDURE generate_seller_report()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur_seller_id INT;
+    DECLARE cur_rev DECIMAL(15,2);
+    DECLARE cur_units INT;
+    DECLARE cur_avg DECIMAL(10,2);
+    
+    -- Explicit Cursor for Sellers
+    DECLARE seller_cursor CURSOR FOR 
+        SELECT user_id FROM users WHERE role_id = (SELECT role_id FROM roles WHERE role_name = 'seller');
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN seller_cursor;
+
+    read_loop: LOOP
+        FETCH seller_cursor INTO cur_seller_id;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Calculate metrics
+        SELECT COALESCE(SUM(oi.price_at_purchase * oi.quantity), 0), 
+               COALESCE(SUM(oi.quantity), 0)
+        INTO cur_rev, cur_units
+        FROM order_items oi
+        WHERE oi.seller_id = cur_seller_id;
+
+        SELECT COALESCE(AVG(price), 0) INTO cur_avg FROM items WHERE seller_id = cur_seller_id;
+
+        -- Populate Performance Table
+        INSERT INTO seller_performance (seller_id, total_revenue, units_sold, avg_item_price)
+        VALUES (cur_seller_id, cur_rev, cur_units, cur_avg)
+        ON DUPLICATE KEY UPDATE 
+            total_revenue = VALUES(total_revenue),
+            units_sold = VALUES(units_sold),
+            avg_item_price = VALUES(avg_item_price),
+            last_updated = CURRENT_TIMESTAMP;
+    END LOOP;
+
+    CLOSE seller_cursor;
+END $$
+
 DELIMITER ;
 
 -- 8. TRIGGERS
@@ -263,4 +337,17 @@ BEGIN
     VALUES (NEW.seller_id, NEW.item_id, 
            CONCAT('You have a new order for ', (SELECT title FROM items WHERE item_id=NEW.item_id), ' from ', (SELECT name FROM users WHERE user_id=(SELECT buyer_id FROM orders WHERE order_id=NEW.order_id))));
 END $$
+
+-- Trigger 3: POWER-UP Business Rule (Self-Purchase Prevention)
+CREATE TRIGGER prevent_self_purchase
+BEFORE INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    DECLARE b_id INT;
+    SELECT buyer_id INTO b_id FROM orders WHERE order_id = NEW.order_id;
+    IF b_id = NEW.seller_id THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Business Rule Violation: Sellers cannot buy their own items.';
+    END IF;
+END $$
+
 DELIMITER ;

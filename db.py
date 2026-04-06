@@ -3,51 +3,51 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # reads .env into os.environ
 
 def get_db_config():
-    """read db settings from env"""
-    load_dotenv()  # refresh in case anything changed
+    """Builds DB_CONFIG dynamically to ensure latest environment variables are used."""
+    load_dotenv() # Refresh env in case of runtime changes
     config = {
-        "host":     os.getenv("MYSQL_HOST", "localhost"),
-        "user":     os.getenv("MYSQL_USER", "root"),
-        "password": os.getenv("MYSQL_PASSWORD", ""),
-        "database": os.getenv("MYSQL_DATABASE", "techmart"),
-        "port":     int(os.getenv("MYSQL_PORT", 3306)),
-        "ssl_ca":   os.getenv("MYSQL_SSL_CA"),
+        "host":         os.getenv("MYSQL_HOST", "localhost"),
+        "user":         os.getenv("MYSQL_USER", "root"),
+        "password":     os.getenv("MYSQL_PASSWORD", ""),
+        "database":     os.getenv("MYSQL_DATABASE", "techmart"),
+        "port":         int(os.getenv("MYSQL_PORT", 3306)),
+        "ssl_ca":       os.getenv("MYSQL_SSL_CA"),
         "unix_socket": os.getenv("MYSQL_UNIX_SOCKET"),
     }
     return config
 
 def get_connection():
-    """connect to mysql, returns connection or None"""
     try:
-        raw = get_db_config()
+        # Build config dynamically from environment
+        raw_config = get_db_config()
         
-        # remove None values so connector doesn't complain
-        config = {k: v for k, v in raw.items() if v is not None}
+        # Filter out None values
+        config = {k: v for k, v in raw_config.items() if v is not None}
         
-        # if its a remote host, dont use unix socket
+        # Priority: If host is remote, DO NOT use unix_socket
         if config.get("host") not in ("localhost", "127.0.0.1"):
             config.pop("unix_socket", None)
-            # enable ssl for remote dbs
+            
+            # Aiven/Remote DB compatibility: Enable SSL if host is remote
             if not config.get("ssl_ca"):
                 config["ssl_disabled"] = False
+                # Some versions might require ssl_verify_identity=False if not using CA
                 config["ssl_verify_identity"] = False
 
         conn = mysql.connector.connect(**config)
         if conn.is_connected():
             return conn
     except Error as e:
-        print(f"db connection error: {e}")
+        print(f"DEBUG: MySQL connection error: {e}")
     return None
 
 def init_db():
-    """create database and run schema.sql on startup"""
     config = get_db_config()
     db_name = config["database"]
-    
-    # try to create database if running locally
+    # Only attempt to create database if on localhost
     if config.get("host") in ("localhost", "127.0.0.1"):
         try:
             base_cfg = {
@@ -60,18 +60,17 @@ def init_db():
                 base_cfg["unix_socket"] = config["unix_socket"]
             
             base = mysql.connector.connect(**base_cfg)
-            c = base.cursor()
-            c.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
+            cur = base.cursor()
+            cur.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
             base.commit()
-            c.close()
+            cur.close()
             base.close()
-            print(f"database '{db_name}' ready")
+            print(f"Database '{db_name}' ready.")
         except Error as e:
-            print(f"skipping db creation: {e}")
+            print(f"Note: Skipping database creation (likely already exists or remote restricted): {e}")
 
     conn = get_connection()
     if not conn:
-        print("couldnt connect to db")
         return
 
     cursor = conn.cursor(buffered=True)
@@ -79,41 +78,36 @@ def init_db():
         with open("schema.sql", "r") as f:
             raw = f.read()
 
-        # parse schema.sql - need to handle DELIMITER for procedures/triggers
-        stmts = []
+        statements = []
         current = []
-        delim = ";"
-        
+        delimiter = ";"
         for line in raw.splitlines():
             stripped = line.strip().upper()
             if stripped.startswith("DELIMITER"):
                 parts = line.strip().split()
                 if len(parts) == 2:
                     new_delim = parts[1]
-                    if new_delim != delim:
+                    if new_delim != delimiter:
                         block = "\n".join(current).strip()
                         if block:
-                            stmts.append(block)
+                            statements.append(block)
                         current = []
-                        delim = new_delim
+                        delimiter = new_delim
                 continue
-            
-            if delim != ";" and line.strip().endswith(delim.strip()):
-                current.append(line.rstrip()[: -len(delim.strip())])
-                stmts.append("\n".join(current).strip())
+            if delimiter != ";" and line.strip().endswith(delimiter.strip()):
+                current.append(line.rstrip()[: -len(delimiter.strip())])
+                statements.append("\n".join(current).strip())
                 current = []
             else:
                 current.append(line)
 
-        # handle remaining lines
         block = "\n".join(current).strip()
-        for s in block.split(";"):
-            s = s.strip()
+        for stmt in block.split(";"):
+            s = stmt.strip()
             if s:
-                stmts.append(s)
+                statements.append(s)
 
-        # run each statement
-        for stmt in stmts:
+        for stmt in statements:
             s = stmt.strip()
             if not s:
                 continue
@@ -124,13 +118,13 @@ def init_db():
                 while cursor.nextset(): pass
                 conn.commit()
             except Error as e:
-                # ignore common errors like table already exists, duplicate entry etc
+                # Ignore: table/proc already exists, duplicate seed data
                 if e.errno not in (1050, 1062, 1304, 1360):
-                    print(f"sql warning ({e.errno}): {e.msg}")
+                    print(f"Warning ({e.errno}): {e.msg}")
 
-        print("schema loaded ok")
+        print("Schema initialized successfully.")
     except FileNotFoundError:
-        print("schema.sql not found, skipping")
+        print("schema.sql not found.")
     finally:
         cursor.close()
         conn.close()
