@@ -30,15 +30,24 @@ def allowed_file(filename):
 
 @app.before_request
 def check_user_session():
-    """Ensure session user still exists in DB (handles DB resets)."""
+    """Ensure session user still exists and matches DB (handles DB resets/ID collisions)."""
     if 'user_id' in session:
         conn = db.get_connection()
         if not conn: return
-        cursor = conn.cursor()
-        cursor.execute("SELECT user_id FROM users WHERE user_id = %s", (session['user_id'],))
-        if not cursor.fetchone():
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT u.user_id, u.email, r.role_name 
+            FROM users u
+            JOIN roles r ON u.role_id = r.role_id
+            WHERE u.user_id = %s
+        """, (session['user_id'],))
+        user = cursor.fetchone()
+        
+        # Invalidate if user missing OR email doesn't match OR role doesn't match
+        if not user or user['email'] != session.get('email') or user['role_name'] != session.get('role'):
             session.clear()
-            flash("Your session has expired or the database was reset. Please log in again.", "info")
+            flash("Your session is invalid or the database was updated. Please log in again.", "info")
+        
         cursor.close()
         conn.close()
 
@@ -206,6 +215,7 @@ def login():
         if user:
             session['user_id'] = user['user_id']
             session['name'] = user['name']
+            session['email'] = user['email']
             session['role'] = user['role']
             flash(f"Welcome back, {user['name']}!", "success")
             if user['role'] == 'admin':
@@ -719,7 +729,7 @@ def buy_item(item_id):
         # Create Order
         cursor.execute("""
             INSERT INTO orders (buyer_id, total_price, status_id, notes) 
-            VALUES (%s, %s, (SELECT status_id FROM order_status WHERE status_name = 'pending'), %s)
+            VALUES (%s, %s, (SELECT status_id FROM order_status WHERE status_name = 'completed'), %s)
         """, (session['user_id'], total_price, notes))
         
         order_id = cursor.lastrowid
