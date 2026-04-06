@@ -1,10 +1,8 @@
-# 🛒 TechMart — Premium Electronics Marketplace
+#  TechMart 
 
-TechMart is a high-performance, full-stack electronic marketplace built with **Flask** and **MySQL**. It features a robust database schema with advanced SQL "Power-Ups" like cursors, triggers, and stored procedures for automated order processing and real-time user notifications.
 
----
 
-## 🚀 Quick Setup
+##  Quick Setup
 
 Follow these steps to get the marketplace running locally on your machine.
 
@@ -53,7 +51,7 @@ FLASK_SECRET_KEY=techmart_ultra_secure_secret_2026
 
 ---
 
-## 🔑 Default Accounts (Demo)
+##  Default Accounts (Demo)
 
 Use these credentials to explore the different roles within the marketplace:
 
@@ -65,13 +63,7 @@ Use these credentials to explore the different roles within the marketplace:
 
 ---
 
-## 🛠️ Advanced Features
-- **Automated Alerts**: Triggers notify buyers when products matching their "Interests" are posted.
-- **Stock Intelligence**: ACID transactions ensure inventory is never oversold.
-- **Auto-Fulfillment**: Orders are automatically marked as `SUCCESSFUL` upon purchase for a seamless demo experience.
-- **Admin Dashboard**: Comprehensive stats on revenue, user growth, and top-selling items.
 
----
 
 ## 📂 Project Structure
 - `app.py`: Main Flask application and routing logic.
