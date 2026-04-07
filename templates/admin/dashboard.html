@@ -55,7 +55,7 @@
               <td class="td-bold">#OC-{{ o.order_id }}</td>
               <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ o.title }}</td>
               <td>{{ o.buyer_name }}</td>
-              <td class="td-price">₹{{ "{:,.0f}".format(o.total_price) }}</td>
+              <td class="td-price">₹{{ "{:,.0f}".format(o.total_price or 0) }}</td>
               <td><span class="status-badge {{ o.status }}">{{ o.status | upper }}</span></td>
             </tr>
             {% else %}

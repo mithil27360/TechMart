@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TechMart — {% block title %}{% endblock %}</title>
-  <meta name="description" content="TechMart — the premium electronic marketplace for buyers and sellers. Built for speed, trust, and simplicity.">
+  <title>TechMart {% block title %}{% endblock %}</title>
+  <meta name="description" content="TechMart the premium electronic marketplace for buyers and sellers. Built for speed, trust, and simplicity.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -111,17 +111,24 @@
       <a href="{{ url_for('admin_dashboard') }}" class="nav-item {{ 'active' if request.path=='/admin' }}">
         <span class="icon">📊</span> Dashboard
       </a>
+      
+      <p class="sidebar-section-label" style="margin-top: 24px;">Management</p>
       <a href="{{ url_for('admin_users') }}" class="nav-item {{ 'active' if request.path=='/admin/users' }}">
         <span class="icon">👥</span> Users
       </a>
       <a href="{{ url_for('admin_items') }}" class="nav-item {{ 'active' if request.path=='/admin/items' }}">
-        <span class="icon">📦</span> All Items
+        <span class="icon">📦</span> Items
       </a>
       <a href="{{ url_for('admin_orders') }}" class="nav-item {{ 'active' if request.path=='/admin/orders' }}">
-        <span class="icon">🛍️</span> All Orders
+        <span class="icon">🛍️</span> Orders
       </a>
+      
+      <p class="sidebar-section-label" style="margin-top: 18px;">System</p>
       <a href="{{ url_for('admin_categories') }}" class="nav-item {{ 'active' if request.path=='/admin/categories' }}">
         <span class="icon">📂</span> Categories
+      </a>
+      <a href="{{ url_for('admin_terminal') }}" class="nav-item {{ 'active' if request.path=='/admin/terminal' }}">
+        <span class="icon">⌨️</span> SQL Terminal
       </a>
     {% endif %}
 
@@ -149,27 +156,17 @@
   <div class="footer-inner">
     <div class="footer-grid">
       <div class="footer-col">
-        <h3>About TechMart</h3>
-        <p>TechMart is the world's most advanced marketplace for high-performance electronics. We connect professional sellers with the most demanding buyers across the globe with unmatched precision.</p>
+        <h3>About</h3>
+        <p>TechMart connects serious buyers and sellers of high-performance electronics around the world.</p>
       </div>
       <div class="footer-col">
-        <h3>Contact Support</h3>
-        <p>Email: support@techmart.com</p>
-        <p>Support: 1-888-TECH-MART</p>
-      </div>
-      <div class="footer-col">
-        <h3>Legal</h3>
-        <p>Terms of Service</p>
-        <p>Privacy Policy</p>
-      </div>
-      <div class="footer-col">
-        <h3>Connect</h3>
-        <p><a href="https://github.com/mithil27360/TechMart" target="_blank" rel="noopener noreferrer">GitHub Project Repo</a></p>
-        <p>LinkedIn</p>
+        <h3>Contact</h3>
+        <p>Email: <a href="mailto:support@techmart.com">support@techmart.com</a></p>
+        <p>Phone: 1-888-TECH-MART</p>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2026 TechMart Global. All rights reserved. <span class="trust-badge">🛡️ 256-bit SSL Secure</span></p>
+      <p>&copy; 2026 TechMart <span class="trust-badge">256 bit SSL Secure</span></p>
     </div>
   </div>
 </footer>

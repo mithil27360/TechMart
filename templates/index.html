@@ -5,10 +5,10 @@
 
 <!-- Hero -->
 <section class="hero-block">
-  <p class="hero-eyebrow">TechMart Global</p>
-  <h1 class="hero-headline">Pro Tech.<br>Pro Trading.</h1>
-  <p class="hero-sub">TechMart is the premier destination for high-performance electronics, connecting expert sellers with demanding buyers globally. Experience seamless trading with precision matched interests.</p>
-  <div class="hero-links">
+  <p class="hero-eyebrow">TechMart</p>
+  <h1 class="hero-headline">Buy. Sell. Connect.</h1>
+  <p class="hero-sub">TechMart is a simple and powerful marketplace for high-performance electronics. We help buyers find the right products and sellers reach the right customers quickly and easily.</p>
+  <div class="hero-links" style="margin-top: 32px;">
     <a href="{{ url_for('register') }}" class="link-primary">Get Started <i class="chevron">›</i></a>
     <a href="{{ url_for('login') }}" class="link-secondary">Sign In <i class="chevron">›</i></a>
   </div>
@@ -18,78 +18,72 @@
 <section class="product-block dark">
   <p class="product-eyebrow">New Arrival</p>
   <h2 class="product-headline">iPhone 17 Pro.</h2>
-  <p class="product-sub">Forged from titanium. Engineered for everything. Experience the future of mobile technology.</p>
+  <p class="product-sub">Strong. Fast. Built for everyday use. Experience the next generation of mobile technology.</p>
   <div class="product-img-wrap">
     <img src="{{ url_for('static', filename='images/apple-iphone-17-pro-back-1.webp') }}"
          alt="iPhone 17 Pro — Titanium Black" loading="lazy">
   </div>
   <div class="product-links">
     <a href="{{ url_for('register') }}" class="link-primary">Learn more <i class="chevron">›</i></a>
-    <a href="{{ url_for('login') }}" class="link-secondary" style="color:rgba(255,255,255,0.5)">Buy <i class="chevron">›</i></a>
+    <a href="{{ url_for('login') }}" class="link-secondary" style="color:rgba(255,255,255,0.5)">Buy Now <i class="chevron">›</i></a>
   </div>
 </section>
 
 <!-- Product 2 — Shopping -->
 <section class="product-block grey">
-  <p class="product-eyebrow">Smart Discovery</p>
-  <h2 class="product-headline">Shop. Smarter.</h2>
-  <p class="product-sub">Browse thousands of curated electronics from trusted sellers. Our precision filters find exactly what you need in milliseconds.</p>
+  <p class="product-eyebrow">Shop Smarter</p>
+  <h2 class="product-headline">Browse Thousands.</h2>
+  <p class="product-sub">Browse electronics from trusted sellers. Use precision filters to quickly find exactly what you need in milliseconds.</p>
   <div class="product-img-wrap" style="max-width:860px;">
     <img src="{{ url_for('static', filename='images/shopping.webp') }}"
          alt="TechMart Shopping Experience" loading="lazy">
   </div>
   <div class="product-links">
-    <a href="{{ url_for('register') }}" class="link-primary">Start browsing <i class="chevron">›</i></a>
+    <a href="{{ url_for('register') }}" class="link-primary">Start Shopping <i class="chevron">›</i></a>
   </div>
 </section>
 
-<!-- Product 3 — Shopping full -->
+<!-- Product 3 — Selling -->
 <section class="product-block">
   <p class="product-eyebrow">Global Selling</p>
-  <h2 class="product-headline">List. Notify.<br>Sell.</h2>
-  <p class="product-sub">Post your item in seconds. Our algorithmic matching system auto-alerts every buyer whose interests match — zero effort required.</p>
+  <h2 class="product-headline">Sell Easily.</h2>
+  <p class="product-sub">List your products in seconds. We automatically notify interested buyers no extra effort needed.</p>
   <div class="product-img-wrap" style="max-width:900px;">
     <img src="{{ url_for('static', filename='images/shopping (1).webp') }}"
          alt="Seller Dashboard" loading="lazy">
   </div>
   <div class="product-links">
-    <a href="{{ url_for('register') }}" class="link-primary">Become a seller <i class="chevron">›</i></a>
+    <a href="{{ url_for('register') }}" class="link-primary">Become a Seller <i class="chevron">›</i></a>
   </div>
 </section>
 
 <!-- Feature Grid -->
 <section class="feature-section">
-  <p class="section-label">Platform Core</p>
+  <p class="section-label">Why TechMart?</p>
   <div class="feature-grid">
     <div class="feat-card">
-      <span class="feat-icon">🔐</span>
-      <h3 class="feat-title">Secure Auth</h3>
-      <p class="feat-desc">Enterprise-grade role management for buyers and sellers with encrypted session security.</p>
+      <h3 class="feat-title">Secure accounts</h3>
+      <p class="feat-desc">End to end security for both buyers and sellers with encrypted session management.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">⚡</span>
-      <h3 class="feat-title">High-Speed Listing</h3>
-      <p class="feat-desc">List products with rich metadata, hierarchical categorization, and real-time stock tracking.</p>
+      <h3 class="feat-title">Fast listings</h3>
+      <p class="feat-desc">Upload and categorize your products in seconds with our optimized seller workflow.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">📂</span>
-      <h3 class="feat-title">Rich Hierarchy</h3>
-      <p class="feat-desc">Precision navigation across deep-nested tech categories like Components › GPUs › NVIDIA.</p>
+      <h3 class="feat-title">Simple browsing</h3>
+      <p class="feat-desc">A clean, focused interface designed to help you navigate deep tech categories easily.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">🎯</span>
-      <h3 class="feat-title">Smart Search</h3>
-      <p class="feat-desc">Full-text search indexed for speed, supporting multi-attribute filtering and price range analysis.</p>
+      <h3 class="feat-title">Smart search</h3>
+      <p class="feat-desc">Powerful indexing and multi-attribute filters find your target gear instantly (Search with filters).</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">🛡️</span>
-      <h3 class="feat-title">Private Tastes</h3>
-      <p class="feat-desc">Users register specific tech interests privately. Sellers never see who is watching, ensuring buyer privacy.</p>
+      <h3 class="feat-title">Private preferences</h3>
+      <p class="feat-desc">Register your tech interests privately. Sellers only see what matters: the sale.</p>
     </div>
     <div class="feat-card">
-      <span class="feat-icon">📢</span>
-      <h3 class="feat-title">Instant Triggering</h3>
-      <p class="feat-desc">On-listing database triggers fire alerts to matching buyers the moment a product hits the site.</p>
+      <h3 class="feat-title">Instant alerts</h3>
+      <p class="feat-desc">Real-time notifications trigger the moment a product matching your interest goes live.</p>
     </div>
   </div>
 </section>

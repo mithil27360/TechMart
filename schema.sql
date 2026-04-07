@@ -176,17 +176,88 @@ CREATE INDEX idx_matching_interests ON interests(category_id, min_price, max_pri
 -- 5. SEED INITIAL DATA
 INSERT INTO users (name, email, password, role_id) VALUES
 ('Rahul', 'rahul@gmail.com', '123', 1),    -- buyer
-('Ananya', 'ananya@gmail.com', '123', 2),  -- seller
+('TechMart Official', 'ananya@gmail.com', '123', 2),  -- official seller
 ('Kiran', 'kiran@gmail.com', '123', 1),    -- buyer
-('Administrator', 'admin@techmart.com', 'admin123', 3); -- admin
+('Administrator', 'admin@techmart.com', 'admin123', 3), -- admin
+('Buyer Account', 'buyer@gmail.com', 'buyer27', 1),
+('Seller Account', 'seller@gmail.com', 'seller27', 2);
 
 INSERT INTO categories (name, parent_id) VALUES
-('Electronics', null), ('Phones', 1), ('Laptops', 1);
+('Electronics', null), ('Phones', 1), ('Laptops', 1), ('Audio', 1), ('Watches', 1), ('Accessories', 1);
 
 INSERT INTO items (title, description, price, category_id, seller_id, condition_id, quantity) VALUES
-('iPhone 13', 'Good condition, 1 year old', 50000, 2, 2, 2, 5),          -- used
-('MacBook Air', 'Silicon M1, Space Grey', 75000, 3, 2, 1, 3),            -- new
-('Mac Studio Silicon M2', 'Ultra performance desktop', 150000, 1, 2, 1, 2); -- new
+('MacBook Air', 'Silicon M1, Space Grey', 75000, 3, 2, 1, 3),
+('Mac Studio Silicon M2', 'Ultra performance desktop', 150000, 1, 2, 1, 2),
+('iPhone 12', 'Used flagship phone in good condition', 42000, 2, 2, 2, 4),
+('iPhone 14 Pro', 'Brand new flagship iPhone', 95000, 2, 2, 1, 2),
+('Samsung Galaxy S22', 'High-end Samsung phone', 60000, 2, 2, 1, 3),
+('OnePlus 11', 'Latest OnePlus flagship', 52000, 2, 2, 1, 4),
+('Google Pixel 7', 'Stock Android experience from Google', 55000, 2, 2, 1, 3),
+('Lenovo ThinkPad X1 Carbon', 'Professional grade laptop', 95000, 3, 2, 2, 2),
+('Asus ROG Strix G15', 'Gaming beast for high performance', 80000, 3, 2, 1, 4),
+('Acer Predator Helios 300', 'Powerful gaming laptop', 78000, 3, 2, 2, 3),
+('MacBook Pro M1', 'Apple Silicon high performance', 120000, 3, 2, 1, 2),
+('MacBook Pro M2', 'Latest Apple Silicon laptop', 140000, 3, 2, 1, 2),
+('boAt Airdopes 141', 'TWS earbuds with long battery life', 1500, 4, 2, 1, 10),
+('Noise Buds VS104', 'Crystal clear sound and deep bass', 1800, 4, 2, 1, 8),
+('Realme Buds Air 5', 'Active noise cancellation earbuds', 3200, 4, 2, 1, 7),
+('Apple AirPods Pro 2', 'Magical sound for your ears', 24000, 4, 2, 1, 6),
+('boAt Rockerz 450', 'Comfortable over-ear headphones', 2000, 4, 2, 1, 9),
+('Sony WH-CH720N', 'Noise cancelling headphones from Sony', 9000, 4, 2, 1, 5),
+('Apple AirPods Max', 'Premium over-ear headphones', 55000, 4, 2, 1, 2),
+('JBL Flip 6 Bluetooth Speaker', 'Portable waterproof speaker', 10000, 4, 2, 1, 4),
+('boAt Stone 350 Speaker', 'Rugged portable speaker', 2500, 4, 2, 1, 8),
+('Marshall Emberton Speaker', 'Iconic design and sound', 15000, 4, 2, 1, 3),
+('Apple Watch Series 9', 'Advanced health tracker', 45000, 5, 2, 1, 2),
+('Samsung Galaxy Watch 6', 'Sleek smart watch for Android', 30000, 5, 2, 1, 3),
+('Noise ColorFit Pro 5', 'Stylish and affordable smart watch', 4000, 5, 2, 1, 7),
+('Anker Power Bank 20000mAh', 'Huge capacity portable charger', 3500, 6, 2, 1, 6),
+('USB-C Hub 7-in-1 Adapter', 'Expand your laptop connectivity', 2500, 6, 2, 1, 5),
+('Logitech MX Master 3 Mouse', 'The choice for productivity', 9000, 6, 2, 1, 8),
+('Mechanical Keyboard (RGB)', 'Great tactile feel for typing and gaming', 7000, 6, 2, 2, 6);
+
+INSERT INTO items_img (item_id, image_url, is_primary) VALUES
+(1, '7e58fa0ceb5d433188a806ed16ece2ac.webp', TRUE),
+(2, '9d790a19e4634228b1b12b0d21211d37.jpg', TRUE),
+(3, 'a537ee19509e4311af405336d00dd0c9.png', TRUE),
+(4, 'b7571b1bf7c44a7ca408a76505a96ad1.webp', TRUE),
+(5, 'd747ebff3dff41cd916055632a54d3d8.jpg', TRUE),
+(5, '78a053c1cf8d49d7a0224fe7bc38bcd4.avif', FALSE),
+(6, '0188b08cbeb748599b9ddea1270c2abd.jpg', TRUE),
+(6, 'be22505a478a478da566259424694b51.webp', FALSE),
+(7, 'f0977211348b40f1861bd391059c043e.jpg', TRUE),
+(7, 'e71f28ae1b724e5fb315f483db551fc7.jpg', FALSE),
+(8, '5236eab31e5147fc945cc9eea7ba8a66.avif', TRUE),
+(8, 'e729dfa122c94118b38c282a1c0076a7.avif', FALSE),
+(8, '4b20f02a318b470ebaffc8fe3fe8ef64.jpg', FALSE),
+(9, '50c38ba8843c4e67960f0d3a87848f16.jpg', TRUE),
+(9, 'eac0a0b1b4f14dc39f4d181e56565875.webp', FALSE),
+(9, 'd91a9daf8de84d92878dba49e4c3aa69.png', FALSE),
+(10, '7b61e8f546b64429b04f7b95834d2909.webp', TRUE),
+(10, '480eaac9c6cb4df9997ecfc014d373ba.jpg', FALSE),
+(11, 'a69396b0c8d143c8af1c51b642b4f05c.jpg', TRUE),
+(11, '0fe07af7d084416fa7f4fc587310a13b.jpg', FALSE),
+(12, 'ad9e3cf35ddf4419b144859785ec41a8.jpg', TRUE),
+(12, 'c6d317f90f5f42e3b86681530472088d.jpg', FALSE),
+(13, '3c753568f7e64bc381b9fa7873323dec.jpg', TRUE),
+(13, '11332a453fdf4c55ac974704b7e7b0cc.jpg', FALSE),
+(14, 'a8d4b92c589344f5bc0f3053911eb360.jpg', TRUE),
+(15, 'e6ab192a2fdf4dc7b819366e03cab6ca.jpg', TRUE),
+(16, 'f0731523df8f47a3b33879465f4c243a.png', TRUE),
+(17, 'd5c4eb326bc34c5ebc43f6b1e3c09c14.jpg', TRUE),
+(18, '6c2c41f3ac604806991fab92d5f368df.jpg', TRUE),
+(19, '083d6ee7630245f8ab5b588e8fe0792c.webp', TRUE),
+(20, '75efa101637e4d9c931faf2ed8203c71.webp', TRUE),
+(21, '75f69d9f9a8c497c9076fe75e9141c87.webp', TRUE),
+(22, '361dd3b844ba40028c1095e032ceb871.webp', TRUE),
+(23, '725ccb7283b04ac3ae88cb0301035f48.png', TRUE),
+(24, '23a2fb52e5394222b2678ffc2dca4cd7.avif', TRUE),
+(24, 'e1dcdbddd2aa4bb79451090d86a1eeed.jpg', FALSE),
+(25, 'd904487d7291421d967c82bf7223a2c6.jpg', TRUE),
+(26, 'bef054e138a7483797e671d1064977e4.jpg', TRUE),
+(27, '7300902f306e42aa94c15782e0e30390.jpg', TRUE),
+(28, '4b4bf3954f6646bfba4a36db44d0cd96.jpg', TRUE),
+(29, '5909341daf9d46e08a61e6a62ceb0b22.jpg', TRUE);
 
 -- 6. VIEWS (Complex Data Representation)
 CREATE OR REPLACE VIEW category_sales_summary AS

@@ -96,7 +96,11 @@ def inject_globals():
         notif_count = cursor.fetchone()[0]
         cursor.close()
         conn.close()
-    return dict(notif_count=notif_count)
+    return dict(notif_count=notif_count, now=datetime.now())
+
+@app.template_filter('datetimeformat')
+def datetimeformat_filter(value):
+    return value.strftime('%b %d, %Y • %I:%M %p')
 
 # --- API Routes ---
 
@@ -175,7 +179,7 @@ def register():
                 return redirect(url_for('register'))
             role_id = role_row['role_id']
             
-            # Auto-verify: no OTP needed
+            
             cursor.execute("INSERT INTO users (name, email, password, role_id, is_verified) VALUES (%s, %s, %s, %s, TRUE)", 
                            (name, email, password, role_id))
             conn.commit()
@@ -638,6 +642,55 @@ def admin_delete_category(cat_id):
     conn.close()
     flash("Category deleted.", "success")
     return redirect(url_for('admin_categories'))
+
+@app.route('/admin/terminal', methods=['GET', 'POST'])
+@admin_required
+def admin_terminal():
+    if request.method == 'POST':
+        sql = request.json.get('sql')
+        if not sql:
+            return jsonify({'success': False, 'error': 'No SQL command provided'})
+        
+        conn = db.get_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Database connection failed'})
+        
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Check for multiple statements or sensitive commands if necessary
+            # For simplicity and given user's request, we execute as-is
+            cursor.execute(sql)
+            
+            # Determine if it was a SELECT query
+            low_sql = sql.strip().lower()
+            if low_sql.startswith('select') or low_sql.startswith('show') or low_sql.startswith('desc'):
+                results = cursor.fetchall()
+                # Handle Decimal objects for JSON serialization
+                for row in results:
+                    for key, val in row.items():
+                        if hasattr(val, '__float__') and not isinstance(val, (int, float)):
+                            row[key] = float(val)
+                
+                return jsonify({
+                    'success': True,
+                    'type': 'select',
+                    'columns': cursor.column_names,
+                    'results': results
+                })
+            else:
+                conn.commit()
+                return jsonify({
+                    'success': True,
+                    'type': 'mutation',
+                    'affected_rows': cursor.rowcount
+                })
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+        finally:
+            cursor.close()
+            conn.close()
+            
+    return render_template('admin/terminal.html')
 
 @app.route('/notifications/read/<int:notif_id>', methods=['POST'])
 def mark_read(notif_id):
